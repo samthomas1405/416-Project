@@ -243,7 +243,6 @@ function USStatesLayer({ onClickState }) {
   const map = useMap();
 
   React.useEffect(() => {
-    // Put your file in /public/us-states.json
     fetch("/us-states.json")
       .then((r) => r.json())
       .then(setGeojson)
