@@ -6,17 +6,28 @@ import "leaflet-defaulticon-compatibility";
 import * as d3 from "d3";
 
 
-// FIPS (string) -> USPS 2-letter code (lower 48 + DC; add AK/HI if your file includes them)
-const FIPS_TO_USPS = {
-  "01": "AL","02": "AK","04": "AZ","05": "AR","06": "CA","08": "CO","09": "CT",
-  "10": "DE","11": "DC","12": "FL","13": "GA","15": "HI","16": "ID","17": "IL",
-  "18": "IN","19": "IA","20": "KS","21": "KY","22": "LA","23": "ME","24": "MD",
-  "25": "MA","26": "MI","27": "MN","28": "MS","29": "MO","30": "MT","31": "NE",
-  "32": "NV","33": "NH","34": "NJ","35": "NM","36": "NY","37": "NC","38": "ND",
-  "39": "OH","40": "OK","41": "OR","42": "PA","44": "RI","45": "SC","46": "SD",
-  "47": "TN","48": "TX","49": "UT","50": "VT","51": "VA","53": "WA","54": "WV",
-  "55": "WI","56": "WY"
-};
+function FitToBounds({ bounds }) {
+  const map = useMap();
+  useEffect(() => {
+    if (bounds && map) {
+      map.fitBounds(bounds, { padding: [20, 20] });
+    }
+  }, [map, bounds]);
+  return null;
+}
+
+
+//GeoJSON file uses FIPS will keep this incase EAVS uses USPS code
+// const FIPS_TO_USPS = {
+//   "01": "AL","02": "AK","04": "AZ","05": "AR","06": "CA","08": "CO","09": "CT",
+//   "10": "DE","11": "DC","12": "FL","13": "GA","15": "HI","16": "ID","17": "IL",
+//   "18": "IN","19": "IA","20": "KS","21": "KY","22": "LA","23": "ME","24": "MD",
+//   "25": "MA","26": "MI","27": "MN","28": "MS","29": "MO","30": "MT","31": "NE",
+//   "32": "NV","33": "NH","34": "NJ","35": "NM","36": "NY","37": "NC","38": "ND",
+//   "39": "OH","40": "OK","41": "OR","42": "PA","44": "RI","45": "SC","46": "SD",
+//   "47": "TN","48": "TX","49": "UT","50": "VT","51": "VA","53": "WA","54": "WV",
+//   "55": "WI","56": "WY"
+// };
 
 
 // ---- App Shell -------------------------------------------------------------
@@ -30,10 +41,17 @@ export default function App() {
       <TopNav onReset={() => { setRoute({ view: "us" }); setActiveTab("summary"); }} />
 
       {route.view === "us" ? (
-        <USLanding onSelectState={(id) => setRoute({ view: "state", id })} />
+        <USLanding onSelectState={(payload)=> {
+          //console.log("clicked payload:", payload); 
+          const {id, name, bounds} = payload; 
+          setRoute({ view: "state", id, name, bounds });
+        }} 
+        />
       ) : (
         <StateView
           stateId={route.id}
+          stateName={route.name}
+          initialBounds = {route.bounds}
           activeTab={activeTab}
           onChangeTab={setActiveTab}
           eavsCategory={eavsCategory}
@@ -76,7 +94,7 @@ function USLanding({ onSelectState }) {
               {/* <Marker position={[38.9, -77.03]}>
                 <Popup>Washington, DC (placeholder)</Popup>
               </Marker> */}
-              <USStatesLayer onClickState={onSelectState} />
+              <USStatesLayer onClickState={(payload)=> onSelectState(payload)} />
             </LeafletMap>
           </div>
 
@@ -94,8 +112,7 @@ function USLanding({ onSelectState }) {
         </Card>
         <Card title="Notes">
           <ul className="list-disc pl-5 text-sm text-neutral-300">
-            <li>This is a skeleton; real data and GeoJSON layers will be wired in later.</li>
-            <li>All charts below use D3 with stub data and can be fed from API responses.</li>
+            <li>This is a rough draft; real data and GeoJSON layers will be wired in later.</li>
           </ul>
         </Card>
       </aside>
@@ -104,11 +121,8 @@ function USLanding({ onSelectState }) {
 }
 
 // ---- State View ------------------------------------------------------------
-function StateView({ stateId, activeTab, onChangeTab, eavsCategory, onChangeEavs, onBack }) {
-  const stateName = useMemo(
-    () => SAMPLE_STATES.find((s) => s.id === stateId)?.name ?? stateId,
-    [stateId]
-  );
+function StateView({ stateId, stateName, initialBounds, activeTab, onChangeTab, eavsCategory, onChangeEavs, onBack }) {
+  const stateNameComputed = stateName ?? stateId;
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-4">
@@ -117,7 +131,7 @@ function StateView({ stateId, activeTab, onChangeTab, eavsCategory, onChangeEavs
           <button className="rounded-xl border border-neutral-700 px-3 py-1.5 text-sm hover:bg-neutral-800" onClick={onBack}>
             ← Back
           </button>
-          <h2 className="text-base font-semibold tracking-tight">{stateName}</h2>
+          <h2 className="text-base font-semibold tracking-tight">{stateNameComputed}</h2>
           <span className="rounded-md border border-neutral-700 px-2 py-0.5 text-xs text-neutral-300">2024 Regions</span>
         </div>
 
@@ -137,11 +151,7 @@ function StateView({ stateId, activeTab, onChangeTab, eavsCategory, onChangeEavs
         <section className="md:col-span-3">
           <Card title={`${stateName} Map (Leaflet)`}>
             <div className="h-[420px] w-full overflow-hidden rounded-2xl">
-              <LeafletMap center={[39.5, -98.35]} zoom={6}>
-                {/* TODO: draw counties/towns via GeoJSON; add choropleth fill based on current tab */}
-                <Marker position={[39.1, -94.58]}>
-                  <Popup>Region overlay placeholder</Popup>
-                </Marker>
+              <LeafletMap center={[39.5, -98.35]} zoom = {6} initialBounds={initialBounds}>
               </LeafletMap>
             </div>
           </Card>
@@ -214,13 +224,14 @@ function StateView({ stateId, activeTab, onChangeTab, eavsCategory, onChangeEavs
 }
 
 // ---- Leaflet Map Wrapper ---------------------------------------------------
-function LeafletMap({ center, zoom, children }) {
+function LeafletMap({ center, zoom, children, initialBounds }) {
   return (
     <MapContainer center={center} zoom={zoom} className="h-full w-full">
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      {initialBounds ? <FitToBounds bounds={initialBounds}/>: null}
       {children}
     </MapContainer>
   );
@@ -249,23 +260,24 @@ function USStatesLayer({ onClickState }) {
   };
 
   function onEachFeature(feature, layer) {
-    // Your format: properties.STATE (FIPS as string), properties.NAME (state name)
-    const fips = feature?.properties?.STATE;         // e.g., "23"
-    const name = feature?.properties?.NAME || fips;  // e.g., "Maine"
-    const usps = FIPS_TO_USPS[fips];                 // e.g., "ME"
+    //GeoJSON file format properties.STATE (FIPS as string), properties.NAME (state name)
+    const id = feature?.properties?.STATE;         //FIPS number
+    const name = feature?.properties?.NAME;  // e.g., "Maine"
+    //const usps = FIPS_TO_USPS[fips];                 //Use if the EAVS is using USPS code
 
     layer.bindTooltip(name, { sticky: true });
 
     layer.on({
       click: () => {
-        if (usps) {
-          // optional: zoom to the state before navigating
-          const b = layer.getBounds?.();
-          if (b) map.fitBounds(b, { padding: [20, 20] });
-          onClickState(usps);
-        } else {
-          console.warn("No USPS code for FIPS:", fips, feature);
-        }
+        if (!id) return;
+          const b = layer.getBounds();
+          const sw = b.getSouthWest();
+          const ne = b.getNorthEast();
+          const bounds = [
+            [sw.lat, sw.lng],
+            [ne.lat, ne.lng],
+          ];
+          onClickState({id, name, bounds});
       },
       mouseover: (e) => e.target.setStyle({ weight: 2, color: "#e5e7eb", fillOpacity: 0.5 }),
       mouseout:  (e) => e.target.setStyle(baseStyle),
@@ -397,7 +409,7 @@ function Card({ title, children }) {
 
 function Tabs({ value, onChange, tabs }) {
   return (
-    <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-1">
+    <div className="rounded-xl border border-neutral-500 bg-neutral-950 p-1">
       <div className="flex flex-wrap gap-1">
         {tabs.map((t) => (
           <button
