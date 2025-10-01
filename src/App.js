@@ -1,9 +1,18 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, GeoJSON, useMap } from "react-leaflet";
+import React, {useEffect, useMemo, useRef, useState,} from "react"
+import { MapContainer, GeoJSON, useMap, TileLayer} from "react-leaflet";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
-import "leaflet-defaulticon-compatibility";
 import * as d3 from "d3";
+
+//temporary since we do not have dummy data for county boundaries. 
+// later on when we develop DB maybe we get rid of this
+let CACHE_US_COUNTIES = null;
+const DETAILED_STATES = new Set(["17","25","37","19","53"]);
+
+function isDetailed(fips) {
+  return DETAILED_STATES.has(String(fips));
+}
+
 
 
 function FitToBounds({ bounds }) {
@@ -15,20 +24,6 @@ function FitToBounds({ bounds }) {
   }, [map, bounds]);
   return null;
 }
-
-
-//GeoJSON file uses FIPS will keep this incase EAVS uses USPS code
-// const FIPS_TO_USPS = {
-//   "01": "AL","02": "AK","04": "AZ","05": "AR","06": "CA","08": "CO","09": "CT",
-//   "10": "DE","11": "DC","12": "FL","13": "GA","15": "HI","16": "ID","17": "IL",
-//   "18": "IN","19": "IA","20": "KS","21": "KY","22": "LA","23": "ME","24": "MD",
-//   "25": "MA","26": "MI","27": "MN","28": "MS","29": "MO","30": "MT","31": "NE",
-//   "32": "NV","33": "NH","34": "NJ","35": "NM","36": "NY","37": "NC","38": "ND",
-//   "39": "OH","40": "OK","41": "OR","42": "PA","44": "RI","45": "SC","46": "SD",
-//   "47": "TN","48": "TX","49": "UT","50": "VT","51": "VA","53": "WA","54": "WV",
-//   "55": "WI","56": "WY"
-// };
-
 
 // ---- App Shell -------------------------------------------------------------
 export default function App() {
@@ -42,7 +37,7 @@ export default function App() {
 
       {route.view === "us" ? (
         <USLanding onSelectState={(payload)=> {
-          //console.log("clicked payload:", payload); 
+          console.log("clicked payload:", payload); 
           const {id, name, bounds} = payload; 
           setRoute({ view: "state", id, name, bounds });
         }} 
@@ -71,8 +66,8 @@ function TopNav({ onReset }) {
     <header className="sticky top-0 z-10 border-b border-neutral-800 bg-neutral-900/70 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
-          <div className="h-3 w-3 rounded-full bg-emerald-400" />
-          <h1 className="text-lg font-semibold tracking-tight">Elections GUI – Rough Draft</h1>
+          <img src = "https://cdn.nba.com/logos/nba/1610612740/primary/L/logo.svg" alt = "Pelicans logo" className = "h-12 w-12"/>
+          <h1 className="text-lg font-semibold tracking-tight">Pelicans</h1>
         </div>
         <button className="rounded-xl border border-neutral-700 px-3 py-1.5 text-sm hover:bg-neutral-800" onClick={onReset}>
           Reset to US
@@ -89,11 +84,7 @@ function USLanding({ onSelectState }) {
       <section className="md:col-span-3">
         <Card title="US Map ">
           <div className="h-[460px] w-full overflow-hidden rounded-2xl">
-            <LeafletMap center={[39.5, -98.35]} zoom={4}>
-              {/* TODO: Replace with US + state GeoJSON layers */}
-              {/* <Marker position={[38.9, -77.03]}>
-                <Popup>Washington, DC (placeholder)</Popup>
-              </Marker> */}
+            <LeafletMap center={[39.5, -96.35]} zoom={4}>
               <USStatesLayer onClickState={(payload)=> onSelectState(payload)} />
             </LeafletMap>
           </div>
@@ -118,6 +109,44 @@ function USLanding({ onSelectState }) {
       </aside>
     </main>
   );
+}
+
+function SelectedStateLayer({ stateId, style }) {
+  const [gj, setGj] = React.useState(null);
+  const map = useMap();
+
+  React.useEffect(() => {
+    fetch("/us-states.json")
+      .then(r => r.json())
+      .then(setGj)
+      .catch(e => console.error("load us-states.json failed", e));
+  }, []);
+
+  React.useEffect(() => {
+    try {
+      const tmp = L.geoJSON(data)
+      const b = tmp.getBounds()
+      map.fitBounds(b, {padding: [2,2], animate:false, maxZoom:10 })
+      map.setMaxBounds(b.pad(0.02))
+    } catch {}
+  }, [stateId,map]);
+
+  if (!gj) return null;
+
+  const feature = gj.features?.find(f => f?.properties?.STATEFP === stateId);
+  if (!feature) return null;
+
+  const data = { type: "FeatureCollection", features: [feature] };
+
+  const baseStyle = {
+    weight: 1,
+    color: "#000000ff",
+    fillColor: "#959eb3ff",
+    fillOpacity: 0.1,
+    ...style,
+  };
+
+  return <GeoJSON data={data} style={() => baseStyle} />;
 }
 
 // ---- State View ------------------------------------------------------------
@@ -152,13 +181,17 @@ function StateView({ stateId, stateName, initialBounds, activeTab, onChangeTab, 
           <Card title={`${stateName} Map (Leaflet)`}>
             <div className="h-[420px] w-full overflow-hidden rounded-2xl">
               <LeafletMap center={[39.5, -98.35]} zoom = {6} initialBounds={initialBounds}>
+                {isDetailed(stateId) ? <DetailedCountyLayer stateFips={stateId} source="/us-counties.json"/>:
+                <SelectedStateLayer stateId={stateId}/>
+                }
+                
               </LeafletMap>
             </div>
           </Card>
         </section>
 
         {/* Right panel with tabs */}
-        <section className="md:col-span-2 flex flex-col gap-4">
+        {/* <section className="md:col-span-2 flex flex-col gap-4">
           <Tabs
             value={activeTab}
             onChange={onChangeTab}
@@ -217,27 +250,155 @@ function StateView({ stateId, stateName, initialBounds, activeTab, onChangeTab, 
               </div>
             </Card>
           )}
+        </section> */}
+        <section className="md:col-span-2">
+          {/* Two columns on wide screens, stack on small */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+            {/* SUMMARY */}
+            <Card title="At-a-glance (placeholder data)">
+              <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-neutral-300">
+                <li><strong>Population:</strong> 10.1M</li>
+                <li><strong>VAP:</strong> 7.8M</li>
+                <li><strong>Urban/Suburban/Rural:</strong> 55% / 32% / 13%</li>
+                <li><strong>Median Income:</strong> $59k</li>
+                <li><strong>Delegation:</strong> 8R / 5D</li>
+                <li><strong>Redistricting:</strong> Leg-controlled</li>
+              </ul>
+            </Card>
+
+            {/* EAVS */}
+            <Card title={`EAVS: ${eavsCategory}`}>
+              <div className="space-y-3">
+                <BarChart height={180} data={SAMPLE_BAR_DATA} xKey="label" yKey="value" />
+                <Placeholder label="Region table (virtualized)" />
+              </div>
+            </Card>
+
+            {/* REGISTRATION */}
+            <Card title="Registration">
+              <div className="space-y-3">
+                <Placeholder label="Choropleth: % Registered" />
+                <BubbleChart height={220} data={SAMPLE_BUBBLE_DATA} xKey="x" yKey="y" rKey="r" colorKey="color" />
+                <Placeholder label="Roster table (paginated)" />
+              </div>
+            </Card>
+
+            {/* EQUIPMENT */}
+            <Card title="Equipment (by make/model)">
+              <ul className="text-sm text-neutral-300">
+                <li>Model A — qty 120 — OS X — VVSG 1.0</li>
+                <li>Model B — qty 65 — OS Y — VVSG 2.0</li>
+                <li className="text-red-400">Retired: Model C — qty 12</li>
+              </ul>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <Placeholder label="History: DRE" />
+                <Placeholder label="History: BMD" />
+                <Placeholder label="History: Scanner" />
+                <Placeholder label="History: DRE+VVPAT" />
+              </div>
+            </Card>
+          </div>
         </section>
+
       </div>
     </main>
+  );
+}
+
+//----- CountyView ------------------------------------------------------------
+function DetailedCountyLayer({
+  stateFips,                  // e.g., "17" for Illinois
+  source = "/us-counties.json",
+  dataMap,                    // Map<GEOID, number> (optional; for choropleth)
+  bins = 5,
+  color = d3.interpolateBlues,
+  baseStyle = {
+    weight: 0.8,
+    color: "#94A3B8",         // light border
+    fillColor: "#022983ff",     // deep navy
+    fillOpacity: 0.95,
+  },
+  onFeatureClick,             // optional
+}) {
+  const [gj, setGj] = React.useState(CACHE_US_COUNTIES);
+  const map = useMap();
+
+  // load (and cache) the national file
+  React.useEffect(() => {
+    if (CACHE_US_COUNTIES) return;
+    fetch(source)
+      .then(r => r.json())
+      .then(json => { CACHE_US_COUNTIES = json; setGj(json); })
+      .catch(e => console.error("Failed to load counties:", e));
+  }, [source]);
+
+  const feats = React.useMemo(() => {
+    const features = gj?.features || [];
+    return features.filter(f => String(f?.properties?.STATEFP) === String(stateFips));
+  }, [gj, stateFips]);
+
+  // fit to county bounds on load
+  React.useEffect(() => {
+    if (!feats?.length) return;
+    const tmp = L.geoJSON({ type: "FeatureCollection", features: feats });
+    try { map.fitBounds(tmp.getBounds(), { padding: [20, 20] }); } catch {}
+  }, [feats, map]);
+
+  if (!feats?.length) return null;
+
+  // style: flat by default; quantized if dataMap provided
+  let styleFn = () => baseStyle;
+  if (dataMap instanceof Map) {
+    const vals = feats.map(f => dataMap.get(String(f.properties?.GEOID))).filter(v => v != null);
+    const domain = (vals.length ? d3.extent(vals) : [0, 1]);
+    const palette = d3.range(bins).map(i => color((i + 1) / bins));
+    const scale = d3.scaleQuantize().domain(domain).range(palette);
+
+    styleFn = (feature) => {
+      const geoid = String(feature.properties?.GEOID);
+      const v = dataMap.get(geoid);
+      return { ...baseStyle, fillColor: v == null ? "#E5E7EB" : scale(v) };
+    };
+  }
+
+  function onEachFeature(feature, layer) {
+    const name = feature.properties?.NAME ?? feature.properties?.GEOID;
+    const geoid = String(feature.properties?.GEOID);
+    const v = dataMap?.get(geoid);
+    const txt = v == null ? "No data" : (typeof v === "number" ? d3.format(".1%")(v) : String(v));
+
+    layer.bindTooltip(`${name}\n${txt}`, { sticky: true });
+    layer.on({
+      click: () => onFeatureClick && onFeatureClick(feature),
+      mouseover: (e) => e.target.setStyle({ ...styleFn(feature), weight: 1.2, color: "#E2E8F0" }),
+      mouseout:  (e) => e.target.setStyle(styleFn(feature)),
+    });
+  }
+
+  return (
+    <GeoJSON
+      data={{ type: "FeatureCollection", features: feats }}
+      style={styleFn}
+      onEachFeature={onEachFeature}
+    />
   );
 }
 
 // ---- Leaflet Map Wrapper ---------------------------------------------------
 function LeafletMap({ center, zoom, children, initialBounds }) {
   return (
-    <MapContainer center={center} zoom={zoom} className="h-full w-full">
+    <MapContainer center={center} zoom={zoom} className="h-full w-full bg-[#F4F3EE]" attributionControl ={false} preferCanvas = {true} zoomControl={true} scrollWheelZoom = {true} dragging = {true}>
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
+
       {initialBounds ? <FitToBounds bounds={initialBounds}/>: null}
       {children}
     </MapContainer>
   );
 }
 
-// GeoJSON layer for clickable US states using FIPS -> USPS mapping
 function USStatesLayer({ onClickState }) {
   const [geojson, setGeojson] = React.useState(null);
   const map = useMap();
@@ -251,18 +412,21 @@ function USStatesLayer({ onClickState }) {
 
   if (!geojson) return null;
 
-  const baseStyle = {
-    weight: 1.2,
-    color: "#71717a",
-    fillColor: "#18181b",
-    fillOpacity: 0.35,
-  };
+  function style(feature){
+    const fips = String(feature?.properties?.STATEFP);
+    const isDetailed = DETAILED_STATES.has(fips);
+    return{
+      weight: isDetailed? 2: 0.5,
+      color:"#000000ff",
+      fillcolor: "#959eb3ff",
+      fillOpacity:0.1
+    }
+  }
 
   function onEachFeature(feature, layer) {
-    //GeoJSON file format properties.STATE (FIPS as string), properties.NAME (state name)
-    const id = feature?.properties?.STATE;         //FIPS number
-    const name = feature?.properties?.NAME;  // e.g., "Maine"
-    //const usps = FIPS_TO_USPS[fips];                 //Use if the EAVS is using USPS code
+    layer.setStyle(style(feature));
+    const id = feature?.properties?.STATEFP;//FIPS number
+    const name = feature?.properties?.NAME; // e.g., "Maine"
 
     layer.bindTooltip(name, { sticky: true });
 
@@ -278,15 +442,18 @@ function USStatesLayer({ onClickState }) {
           ];
           onClickState({id, name, bounds});
       },
-      mouseover: (e) => e.target.setStyle({ weight: 2, color: "#e5e7eb", fillOpacity: 0.5 }),
-      mouseout:  (e) => e.target.setStyle(baseStyle),
+      mouseover: (e) => {
+        e.target.setStyle({...style(feature),  weight: style(feature).weight + 0.8, color: "#0b2880ff", fillOpacity: 0.1 });
+        e.target.bringToFront();
+      },
+      mouseout:  (e) => e.target.setStyle(style(feature)),
     });
   }
 
   return (
     <GeoJSON
       data={geojson}
-      style={() => baseStyle}
+      style={() => style}
       onEachFeature={onEachFeature}
     />
   );
