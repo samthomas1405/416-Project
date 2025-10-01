@@ -1,3 +1,3 @@
 # 416-Project
 npm install 
-npm run
+npm start

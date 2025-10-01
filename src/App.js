@@ -37,7 +37,7 @@ export default function App() {
 
       {route.view === "us" ? (
         <USLanding onSelectState={(payload)=> {
-          console.log("clicked payload:", payload); 
+          //console.log("clicked payload:", payload); 
           const {id, name, bounds} = payload; 
           setRoute({ view: "state", id, name, bounds });
         }} 
@@ -64,7 +64,7 @@ export default function App() {
 function TopNav({ onReset }) {
   return (
     <header className="sticky top-0 z-10 border-b border-neutral-800 bg-neutral-900/70 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+      <div className="mx-auto flex max-w-screen-2xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
           <img src = "https://cdn.nba.com/logos/nba/1610612740/primary/L/logo.svg" alt = "Pelicans logo" className = "h-12 w-12"/>
           <h1 className="text-lg font-semibold tracking-tight">Pelicans</h1>
@@ -80,7 +80,7 @@ function TopNav({ onReset }) {
 // ---- US Landing (Splash) ---------------------------------------------------
 function USLanding({ onSelectState }) {
   return (
-    <main className="mx-auto grid max-w-7xl grid-cols-1 gap-4 px-4 py-4 md:grid-cols-5">
+    <main className="mx-auto grid max-w-screen-2xl grid-cols-1 gap-4 px-4 py-4 md:grid-cols-5">
       <section className="md:col-span-3">
         <Card title="US Map ">
           <div className="h-[460px] w-full overflow-hidden rounded-2xl">
@@ -93,7 +93,8 @@ function USLanding({ onSelectState }) {
       </section>
 
       <aside className="md:col-span-2 flex flex-col gap-4">
-        <Card title="Quick Comparisons (placeholders)">
+        {/*maybe change to a tab on the left */}
+        <Card title="Splash buttons (placeholders)"> 
           <div className="grid grid-cols-2 gap-3 text-sm">
             <Placeholder label="Equipment by State" />
             <Placeholder label="US Equipment Summary" />
@@ -154,7 +155,7 @@ function StateView({ stateId, stateName, initialBounds, activeTab, onChangeTab, 
   const stateNameComputed = stateName ?? stateId;
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-4">
+    <main className="mx-auto max-w-screen-2xl px-4 py-4" style={{height: "calc(100vh - 64px)"}}>
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <button className="rounded-xl border border-neutral-700 px-3 py-1.5 text-sm hover:bg-neutral-800" onClick={onBack}>
@@ -190,7 +191,7 @@ function StateView({ stateId, stateName, initialBounds, activeTab, onChangeTab, 
           </Card>
         </section>
 
-        {/* Right panel with tabs */}
+        {/*might need waiting on piazza respnse*/}
         {/* <section className="md:col-span-2 flex flex-col gap-4">
           <Tabs
             value={activeTab}
@@ -252,7 +253,6 @@ function StateView({ stateId, stateName, initialBounds, activeTab, onChangeTab, 
           )}
         </section> */}
         <section className="md:col-span-2">
-          {/* Two columns on wide screens, stack on small */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
             {/* SUMMARY */}
             <Card title="At-a-glance (placeholder data)">
@@ -269,33 +269,20 @@ function StateView({ stateId, stateName, initialBounds, activeTab, onChangeTab, 
             {/* EAVS */}
             <Card title={`EAVS: ${eavsCategory}`}>
               <div className="space-y-3">
-                <BarChart height={180} data={SAMPLE_BAR_DATA} xKey="label" yKey="value" />
-                <Placeholder label="Region table (virtualized)" />
+                <BarChart height={150} data={SAMPLE_BAR_DATA} xKey="label" yKey="value" />
               </div>
             </Card>
 
             {/* REGISTRATION */}
             <Card title="Registration">
               <div className="space-y-3">
-                <Placeholder label="Choropleth: % Registered" />
-                <BubbleChart height={220} data={SAMPLE_BUBBLE_DATA} xKey="x" yKey="y" rKey="r" colorKey="color" />
-                <Placeholder label="Roster table (paginated)" />
+                <BubbleChart height={170} data={SAMPLE_BUBBLE_DATA} xKey="x" yKey="y" rKey="r" colorKey="color" />
               </div>
             </Card>
 
             {/* EQUIPMENT */}
             <Card title="Equipment (by make/model)">
-              <ul className="text-sm text-neutral-300">
-                <li>Model A — qty 120 — OS X — VVSG 1.0</li>
-                <li>Model B — qty 65 — OS Y — VVSG 2.0</li>
-                <li className="text-red-400">Retired: Model C — qty 12</li>
-              </ul>
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                <Placeholder label="History: DRE" />
-                <Placeholder label="History: BMD" />
-                <Placeholder label="History: Scanner" />
-                <Placeholder label="History: DRE+VVPAT" />
-              </div>
+              <EquipmentTable rows={SAMPLE_EQUIPMENT} pageSize={3} />
             </Card>
           </div>
         </section>
@@ -309,16 +296,16 @@ function StateView({ stateId, stateName, initialBounds, activeTab, onChangeTab, 
 function DetailedCountyLayer({
   stateFips,                  // e.g., "17" for Illinois
   source = "/us-counties.json",
-  dataMap,                    // Map<GEOID, number> (optional; for choropleth)
+  dataMap,                    // Map<GEOID, number> (needed; for choropleth) but need data
   bins = 5,
   color = d3.interpolateBlues,
   baseStyle = {
     weight: 0.8,
-    color: "#94A3B8",         // light border
-    fillColor: "#022983ff",     // deep navy
+    color: "#94A3B8",
+    fillColor: "#022983ff",
     fillOpacity: 0.95,
   },
-  onFeatureClick,             // optional
+  onFeatureClick,             // implement tmr
 }) {
   const [gj, setGj] = React.useState(CACHE_US_COUNTIES);
   const map = useMap();
@@ -346,7 +333,6 @@ function DetailedCountyLayer({
 
   if (!feats?.length) return null;
 
-  // style: flat by default; quantized if dataMap provided
   let styleFn = () => baseStyle;
   if (dataMap instanceof Map) {
     const vals = feats.map(f => dataMap.get(String(f.properties?.GEOID))).filter(v => v != null);
@@ -462,7 +448,7 @@ function USStatesLayer({ onClickState }) {
 
 
 
-// ---- D3: BarChart ----------------------------------------------------------
+// --------BarChart ----------------------------------------------------------
 function BarChart({ data, xKey, yKey, height = 220, margin = { top: 12, right: 12, bottom: 28, left: 36 } }) {
   const ref = useRef(null);
   const [width, setWidth] = useState(0);
@@ -510,7 +496,7 @@ function BarChart({ data, xKey, yKey, height = 220, margin = { top: 12, right: 1
   return <div ref={ref} className="w-full text-indigo-400" />;
 }
 
-// ---- D3: BubbleChart -------------------------------------------------------
+// --------BubbleChart -------------------------------------------------------
 function BubbleChart({ data, xKey, yKey, rKey, colorKey, height = 240, margin = { top: 12, right: 12, bottom: 32, left: 40 } }) {
   const ref = useRef(null);
   const [width, setWidth] = useState(0);
@@ -602,7 +588,117 @@ function Placeholder({ label }) {
   );
 }
 
+function EquipmentTable({ rows, pageSize = 6 }) {
+  const [page, setPage] = React.useState(0);
+  const [sortBy, setSortBy] = React.useState({ key: "model", dir: "asc" });
+
+  const sorted = React.useMemo(() => {
+    const data = rows.slice();
+    const { key, dir } = sortBy;
+    data.sort((a, b) => {
+      const va = a[key], vb = b[key];
+      if (typeof va === "number" && typeof vb === "number") {
+        return dir === "asc" ? va - vb : vb - va;
+      }
+      return dir === "asc"
+        ? String(va).localeCompare(String(vb))
+        : String(vb).localeCompare(String(va));
+    });
+    return data;
+  }, [rows, sortBy]);
+
+  const pages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const start = page * pageSize;
+  const current = sorted.slice(start, start + pageSize);
+
+  function toggleSort(key) {
+    setPage(0);
+    setSortBy(s => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }));
+  }
+
+  const Th = ({ colKey, children, align = "left", width }) => (
+    <th
+      onClick={() => toggleSort(colKey)}
+      className={`p-2 text-${align} cursor-pointer select-none`}
+      style={width ? { width } : undefined}
+      title="Click to sort"
+    >
+      <span className="inline-flex items-center gap-1">
+        {children}
+        {sortBy.key === colKey ? (sortBy.dir === "asc" ? "▲" : "▼") : ""}
+      </span>
+    </th>
+  );
+
+  return (
+    <div className="rounded-xl border border-neutral-800">
+      <table className="w-full text-sm">
+        <thead className="bg-neutral-900">
+          <tr>
+            <Th colKey="model" width="34%">Model</Th>
+            <Th colKey="qty" align="right" width="14%">Qty</Th>
+            <Th colKey="os" width="20%">OS</Th>
+            <Th colKey="vvsg" width="16%">VVSG</Th>
+            <Th colKey="status" width="16%">Status</Th>
+          </tr>
+        </thead>
+        <tbody>
+          {current.map((r, i) => (
+            <tr key={r.id ?? `${r.model}-${i}`} className="border-t border-neutral-800">
+              <td className="p-2">{r.model}</td>
+              <td className="p-2 text-right">{r.qty}</td>
+              <td className="p-2">{r.os}</td>
+              <td className="p-2">{r.vvsg}</td>
+              <td className={`p-2 ${r.status === "Retired" ? "text-red-400" : "text-neutral-300"}`}>
+                {r.status}
+              </td>
+            </tr>
+          ))}
+          {current.length === 0 && (
+            <tr><td className="p-3 text-neutral-400" colSpan={5}>No equipment.</td></tr>
+          )}
+        </tbody>
+      </table>
+
+      <div className="flex items-center justify-between p-2 text-xs bg-neutral-900">
+        <span>
+          Page {page + 1} / {pages} · {sorted.length} item{sorted.length === 1 ? "" : "s"}
+        </span>
+        <div className="flex gap-1">
+          <button
+            className="rounded border border-neutral-700 px-2 py-1 disabled:opacity-50"
+            disabled={page === 0}
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+          >
+            Prev
+          </button>
+          <button
+            className="rounded border border-neutral-700 px-2 py-1 disabled:opacity-50"
+            disabled={page + 1 >= pages}
+            onClick={() => setPage(p => Math.min(pages - 1, p + 1))}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 // ---- Sample (temporary) data ----------------------------------------------
+
+const SAMPLE_EQUIPMENT = [
+  { id: "A-1", model: "Model A", qty: 120, os: "OS X", vvsg: "1.0", status: "Active" },
+  { id: "B-1", model: "Model B", qty: 65,  os: "OS Y", vvsg: "2.0", status: "Active" },
+  { id: "C-1", model: "Model C", qty: 12,  os: "OS W", vvsg: "1.0", status: "Retired" },
+  { id: "D-1", model: "Model D", qty: 40,  os: "OS Z", vvsg: "2.0", status: "Active" },
+  { id: "E-1", model: "Model E", qty: 22,  os: "OS X", vvsg: "2.0", status: "Active" },
+  { id: "F-1", model: "Model F", qty: 9,   os: "OS Y", vvsg: "1.0", status: "Retired" },
+  { id: "G-1", model: "Model G", qty: 71,  os: "OS Z", vvsg: "2.0", status: "Active" },
+];
+
+
 const SAMPLE_STATES = [
   { id: "NY", name: "New York" },
   { id: "GA", name: "Georgia" },
