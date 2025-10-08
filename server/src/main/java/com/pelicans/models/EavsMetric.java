@@ -1,4 +1,4 @@
-package com.example.votingdata.model;
+package com.example.votingdata.test;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
@@ -8,7 +8,7 @@ import java.util.Map;
 
 @Document(collection = "eavs_metrics")
 @CompoundIndex(name = "yr_state_region_unique", def = "{'stateId':1,'regionId':1,'year':1}", unique = true)
-@CompoundIndex(name = "year_state_idx", def = "{'year':1,'stateId':1}")
+// @CompoundIndex(name = "year_state_idx", def = "{'year':1,'stateId':1}")
 public class EavsMetric {
     @Id
     private String id;           // "2024|NY|NY-36061"

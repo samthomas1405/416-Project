@@ -7,7 +7,7 @@ import java.util.Date;
 
 @Document(collection = "election_results")
 @CompoundIndex(name = "yr_state_region_unique", def = "{'stateId':1,'regionId':1,'year':1}", unique = true)
-@CompoundIndex(name = "year_state_idx", def = "{'year':1,'stateId':1}")
+// @CompoundIndex(name = "year_state_idx", def = "{'year':1,'stateId':1}")
 public class ElectionResult {
     public static class Presidential {
         private Integer rep;
