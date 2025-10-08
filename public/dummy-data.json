@@ -1,0 +1,371 @@
+
+
+{
+    "DETAILED_STATES": ["25", "19", "53", "37", "17"],
+  "GUI03_provisional_bar": {
+  "25": [
+    {"key": "E2a", "label": "Provisional Ballots Cast Voter Not on List", "value": 14},
+    {"key": "E2b", "label": "Provisional Ballots Cast Voter Lacked ID", "value": 22},
+    {"key": "E2c", "label": "Provisional Ballots Cast Election Official Challenged Eligibility", "value": 9},
+    {"key": "E2d", "label": "Provisional Ballots Cast Another Person Challenged Eligibility", "value": 7},
+    {"key": "E2e", "label": "Provisional Ballots Cast Voter Not Resident", "value": 11},
+    {"key": "E2f", "label": "Provisional Ballots Cast Voter Registration Not Updated", "value": 8},
+    {"key": "E2g", "label": "Provisional Ballots Cast Voter Did Not Surrender Mail Ballot", "value": 3},
+    {"key": "E2h", "label": "Provisional Ballots Cast Judge Extended Voting Hours", "value": 5},
+    {"key": "E2i", "label": "Provisional Ballots Cast Voter Used SDR", "value": 4},
+    {"key": "other", "label": "Other Reasons", "value": 6}
+  ],
+  "19": [
+    {"key": "E2a", "label": "Provisional Ballots Cast Voter Not on List", "value": 10},
+    {"key": "E2b", "label": "Provisional Ballots Cast Voter Lacked ID", "value": 18},
+    {"key": "E2c", "label": "Provisional Ballots Cast Election Official Challenged Eligibility", "value": 6},
+    {"key": "E2d", "label": "Provisional Ballots Cast Another Person Challenged Eligibility", "value": 5},
+    {"key": "E2e", "label": "Provisional Ballots Cast Voter Not Resident", "value": 8},
+    {"key": "E2f", "label": "Provisional Ballots Cast Voter Registration Not Updated", "value": 5},
+    {"key": "E2g", "label": "Provisional Ballots Cast Voter Did Not Surrender Mail Ballot", "value": 2},
+    {"key": "E2h", "label": "Provisional Ballots Cast Judge Extended Voting Hours", "value": 4},
+    {"key": "E2i", "label": "Provisional Ballots Cast Voter Used SDR", "value": 3},
+    {"key": "other", "label": "Other Reasons", "value": 4}
+  ],
+  "53": [
+    {"key": "E2a", "label": "Provisional Ballots Cast Voter Not on List", "value": 9},
+    {"key": "E2b", "label": "Provisional Ballots Cast Voter Lacked ID", "value": 20},
+    {"key": "E2c", "label": "Provisional Ballots Cast Election Official Challenged Eligibility", "value": 7},
+    {"key": "E2d", "label": "Provisional Ballots Cast Another Person Challenged Eligibility", "value": 2},
+    {"key": "E2e", "label": "Provisional Ballots Cast Voter Not Resident", "value": 6},
+    {"key": "E2f", "label": "Provisional Ballots Cast Voter Registration Not Updated", "value": 6},
+    {"key": "E2g", "label": "Provisional Ballots Cast Voter Did Not Surrender Mail Ballot", "value": 1},
+    {"key": "E2h", "label": "Provisional Ballots Cast Judge Extended Voting Hours", "value": 6},
+    {"key": "E2i", "label": "Provisional Ballots Cast Voter Used SDR", "value": 3},
+    {"key": "other", "label": "Other Reasons", "value": 5}
+  ],
+  "37": [
+    {"key": "E2a", "label": "Provisional Ballots Cast Voter Not on List", "value": 12},
+    {"key": "E2b", "label": "Provisional Ballots Cast Voter Lacked ID", "value": 19},
+    {"key": "E2c", "label": "Provisional Ballots Cast Election Official Challenged Eligibility", "value": 8},
+    {"key": "E2d", "label": "Provisional Ballots Cast Another Person Challenged Eligibility", "value": 7},
+    {"key": "E2e", "label": "Provisional Ballots Cast Voter Not Resident", "value": 9},
+    {"key": "E2f", "label": "Provisional Ballots Cast Voter Registration Not Updated", "value": 7},
+    {"key": "E2g", "label": "Provisional Ballots Cast Voter Did Not Surrender Mail Ballot", "value": 2},
+    {"key": "E2h", "label": "Provisional Ballots Cast Judge Extended Voting Hours", "value": 5},
+    {"key": "E2i", "label": "Provisional Ballots Cast Voter Used SDR", "value": 3},
+    {"key": "other", "label": "Other Reasons", "value": 4}
+  ],
+  "17": [
+    {"key": "E2a", "label": "Provisional Ballots Cast Voter Not on List", "value": 11},
+    {"key": "E2b", "label": "Provisional Ballots Cast Voter Lacked ID", "value": 21},
+    {"key": "E2c", "label": "Provisional Ballots Cast Election Official Challenged Eligibility", "value": 7},
+    {"key": "E2d", "label": "Provisional Ballots Cast Another Person Challenged Eligibility", "value": 6},
+    {"key": "E2e", "label": "Provisional Ballots Cast Voter Not Resident", "value": 10},
+    {"key": "E2f", "label": "Provisional Ballots Cast Voter Registration Not Updated", "value": 6},
+    {"key": "E2g", "label": "Provisional Ballots Cast Voter Did Not Surrender Mail Ballot", "value": 2},
+    {"key": "E2h", "label": "Provisional Ballots Cast Judge Extended Voting Hours", "value": 5},
+    {"key": "E2i", "label": "Provisional Ballots Cast Voter Used SDR", "value": 3},
+    {"key": "other", "label": "Other Reasons", "value": 4}
+  ]
+
+  },
+  "GUI04_provisional_table": {
+    "schema": { "cols": ["region","E2a","E2b","E2c","E2d","E2e","E2f","E2g","E2h","E2i","other","total"] },
+    "25": [
+      { "region": "Region A", "E2a": 3, "E2b": 6, "E2c": 2, "E2d": 1, "E2e": 3, "E2f": 2, "E2g": 1, "E2h": 2, "E2i": 1, "other": 1 },
+      { "region": "Region B", "E2a": 2, "E2b": 5, "E2c": 2, "E2d": 1, "E2e": 2, "E2f": 2, "E2g": 0, "E2h": 1, "E2i": 1, "other": 2 },
+      { "region": "Region C", "E2a": 4, "E2b": 7, "E2c": 3, "E2d": 2, "E2e": 3, "E2f": 3, "E2g": 1, "E2h": 2, "E2i": 1, "other": 2 },
+      { "region": "TOTAL" }
+    ],
+    "19": [
+      { "region": "Region A", "E2a": 2, "E2b": 5, "E2c": 1, "E2d": 1, "E2e": 2, "E2f": 1, "E2g": 0, "E2h": 1, "E2i": 1, "other": 1 },
+      { "region": "Region B", "E2a": 3, "E2b": 6, "E2c": 2, "E2d": 2, "E2e": 3, "E2f": 2, "E2g": 0, "E2h": 1, "E2i": 1, "other": 1 },
+      { "region": "Region C", "E2a": 1, "E2b": 7, "E2c": 3, "E2d": 2, "E2e": 3, "E2f": 2, "E2g": 2, "E2h": 2, "E2i": 1, "other": 2 },
+      { "region": "TOTAL" }
+    ],
+    "53": [
+      { "region": "Region A", "E2a": 2, "E2b": 6, "E2c": 2, "E2d": 0, "E2e": 2, "E2f": 2, "E2g": 0, "E2h": 2, "E2i": 1, "other": 2 },
+      { "region": "Region B", "E2a": 3, "E2b": 7, "E2c": 3, "E2d": 1, "E2e": 2, "E2f": 2, "E2g": 1, "E2h": 2, "E2i": 1, "other": 1 },
+      { "region": "Region C", "E2a": 4, "E2b": 7, "E2c": 2, "E2d": 1, "E2e": 2, "E2f": 2, "E2g": 0, "E2h": 2, "E2i": 1, "other": 2 },
+      { "region": "TOTAL" }
+    ],
+    "37": [
+      { "region": "Region A", "E2a": 3, "E2b": 6, "E2c": 2, "E2d": 2, "E2e": 3, "E2f": 2, "E2g": 1, "E2h": 2, "E2i": 1, "other": 1 },
+      { "region": "Region B", "E2a": 4, "E2b": 6, "E2c": 3, "E2d": 2, "E2e": 3, "E2f": 3, "E2g": 1, "E2h": 2, "E2i": 1, "other": 2 },
+      { "region": "Region C", "E2a": 5, "E2b": 7, "E2c": 3, "E2d": 3, "E2e": 3, "E2f": 2, "E2g": 0, "E2h": 1, "E2i": 1, "other": 1 },
+      { "region": "TOTAL" }
+    ],
+    "17": [
+      { "region": "Region A", "E2a": 2, "E2b": 7, "E2c": 2, "E2d": 2, "E2e": 3, "E2f": 2, "E2g": 1, "E2h": 2, "E2i": 1, "other": 1 },
+      { "region": "Region B", "E2a": 3, "E2b": 7, "E2c": 2, "E2d": 1, "E2e": 3, "E2f": 2, "E2g": 1, "E2h": 2, "E2i": 1, "other": 2 },
+      { "region": "Region C", "E2a": 6, "E2b": 7, "E2c": 3, "E2d": 2, "E2e": 4, "E2f": 2, "E2g": 0, "E2h": 1, "E2i": 1, "other": 1 },
+      { "region": "TOTAL" }
+    ]
+  },
+
+  "GUI05_provisional_choropleth_e1a": {
+    "bins": 7,
+    "25": { "values": { "25025": 1800, "25027": 950, "25017": 750, "25009": 620, "25005": 520 } },
+    "19": { "values": { "19153": 480,  "19113": 360, "19049": 220, "19163": 300, "19193": 260 } },
+    "53": { "values": { "53033": 1500, "53061": 900, "53053": 700, "53067": 600, "53011": 350 } },
+    "37": { "values": { "37067": 850,  "37119": 780, "37063": 620, "37183": 540, "37021": 400 } },
+    "17": { "values": { "17031": 1600, "17043": 700, "17097": 650, "17089": 520, "17197": 300 } }
+  },
+
+  "GUI06_state_equipment_summary": {
+  "25": [
+    {"id":"ma-a","makeModel":"AccuScan X100","type":"Scanner","os":"Linux","certification":"VVSG 2.0 certified","qty":1800,"scanRate":45,"errorRate":0.004,"reliability":0.98,"age":3},
+    {"id":"ma-b","makeModel":"ClearVote 2.3","type":"BMD","os":"Linux","certification":"VVSG 2.0 applied","qty":650,"scanRate":"","errorRate":0.006,"reliability":0.97,"age":4},
+    {"id":"ma-c","makeModel":"SecureCast Pro","type":"DRE (VVPAT)","os":"Windows 10","certification":"VVSG 1.1 certified","qty":220,"scanRate":"","errorRate":0.009,"reliability":0.95,"age":6},
+    {"id":"ma-d","makeModel":"TownScan S9","type":"Scanner","os":"Linux","certification":"VVSG 1.0 certified","qty":120,"scanRate":30,"errorRate":0.007,"reliability":0.96,"age":8,"retired":true}
+  ],
+  "19": [
+    {"id":"ia-a","makeModel":"PrairieScan 5","type":"Scanner","os":"Linux","certification":"VVSG 2.0 certified","qty":800,"scanRate":40,"errorRate":0.005,"reliability":0.98,"age":3},
+    {"id":"ia-b","makeModel":"Hawkeye Mark","type":"BMD","os":"Linux","certification":"VVSG 2.0 applied","qty":300,"scanRate":"","errorRate":0.006,"reliability":0.97,"age":4},
+    {"id":"ia-c","makeModel":"CountyTouch","type":"DRE (no VVPAT)","os":"Windows 7","certification":"not certified","qty":70,"scanRate":"","errorRate":0.012,"reliability":0.92,"age":10,"retired":true}
+  ],
+  "53": [
+    {"id":"wa-a","makeModel":"CascadiaScan","type":"Scanner","os":"Linux","certification":"VVSG 2.0 certified","qty":2100,"scanRate":48,"errorRate":0.004,"reliability":0.98,"age":2},
+    {"id":"wa-b","makeModel":"Evergreen Mark","type":"BMD","os":"Linux","certification":"VVSG 1.1 certified","qty":900,"scanRate":"","errorRate":0.007,"reliability":0.96,"age":5}
+  ],
+  "37": [
+    {"id":"nc-a","makeModel":"TarHeel Scan 4","type":"Scanner","os":"Linux","certification":"VVSG 2.0 certified","qty":1900,"scanRate":42,"errorRate":0.006,"reliability":0.97,"age":3},
+    {"id":"nc-b","makeModel":"Piedmont Touch","type":"DRE (VVPAT)","os":"Windows 10","certification":"VVSG 1.1 certified","qty":300,"scanRate":"","errorRate":0.009,"reliability":0.95,"age":6}
+  ],
+  "17": [
+    {"id":"il-a","makeModel":"Lakefront Scan","type":"Scanner","os":"Linux","certification":"VVSG 2.0 certified","qty":2600,"scanRate":50,"errorRate":0.004,"reliability":0.98,"age":2},
+    {"id":"il-b","makeModel":"Windy BMD","type":"BMD","os":"Linux","certification":"VVSG 2.0 applied","qty":1100,"scanRate":"","errorRate":0.006,"reliability":0.97,"age":4},
+    {"id":"il-c","makeModel":"LegacyTouch","type":"DRE (no VVPAT)","os":"Windows 7","certification":"not certified","qty":120,"scanRate":"","errorRate":0.013,"reliability":0.91,"age":11,"retired":true}
+  ]
+},
+
+
+
+  "GUI07_active_voters": {
+    "25": {
+      "totals": { "active": 4200000, "inactive": 380000, "total": 4580000 },
+      "regions": [
+        { "region": "Region A", "active": 1200000, "inactive": 100000, "total": 1300000 },
+        { "region": "Region B", "active": 1600000, "inactive": 150000, "total": 1750000 },
+        { "region": "Region C", "active": 1400000, "inactive": 130000, "total": 1530000 }
+      ]
+    },
+    "19": {
+      "totals": { "active": 2100000, "inactive": 190000, "total": 2290000 },
+      "regions": [
+        { "region": "Region A", "active": 700000, "inactive": 60000, "total": 760000 },
+        { "region": "Region B", "active": 800000, "inactive": 70000, "total": 870000 },
+        { "region": "Region C", "active": 600000, "inactive": 60000, "total": 660000 }
+      ]
+    },
+    "53": {
+      "totals": { "active": 3600000, "inactive": 320000, "total": 3920000 },
+      "regions": [
+        { "region": "Region A", "active": 1200000, "inactive": 100000, "total": 1300000 },
+        { "region": "Region B", "active": 1400000, "inactive": 120000, "total": 1520000 },
+        { "region": "Region C", "active": 1000000, "inactive": 100000, "total": 1100000 }
+      ]
+    },
+    "37": {
+      "totals": { "active": 4700000, "inactive": 420000, "total": 5120000 },
+      "regions": [
+        { "region": "Region A", "active": 1600000, "inactive": 150000, "total": 1750000 },
+        { "region": "Region B", "active": 1700000, "inactive": 150000, "total": 1850000 },
+        { "region": "Region C", "active": 1400000, "inactive": 120000, "total": 1520000 }
+      ]
+    },
+    "17": {
+      "totals": { "active": 5200000, "inactive": 480000, "total": 5680000 },
+      "regions": [
+        { "region": "Region A", "active": 1800000, "inactive": 160000, "total": 1960000 },
+        { "region": "Region B", "active": 2000000, "inactive": 180000, "total": 2180000 },
+        { "region": "Region C", "active": 1400000, "inactive": 140000, "total": 1540000 }
+      ]
+    }
+  },
+  "GUI07_active_voters_map": {
+    "bins": 7,
+    "25": { "values": { "25001": 0.83, "25003": 0.79, "25005": 0.81 } },
+    "19": { "values": { "19001": 0.82, "19003": 0.76, "19005": 0.80 } },
+    "53": { "values": { "53001": 0.85, "53003": 0.78, "53005": 0.81 } },
+    "37": { "values": { "37001": 0.84, "37003": 0.77, "37005": 0.82 } },
+    "17": { "values": { "17001": 0.86, "17003": 0.79, "17005": 0.83 } }
+  },
+
+
+
+
+  "GUI12_equipment_by_state_2024": [
+    { "stateFips": "06", "state": "California", "dre_no_vvpat": 150, "dre_vvpat": 40, "bmd": 4200, "scanner": 5200 },
+    { "stateFips": "19", "state": "Iowa",       "dre_no_vvpat": 20,  "dre_vvpat": 15, "bmd": 700,  "scanner": 1200 },
+    { "stateFips": "25", "state": "Massachusetts", "dre_no_vvpat": 5, "dre_vvpat": 8, "bmd": 900, "scanner": 1300 },
+    { "stateFips": "17", "state": "Illinois",   "dre_no_vvpat": 10,  "dre_vvpat": 85, "bmd": 1400, "scanner": 1900 },
+    { "stateFips": "37", "state": "North Carolina", "dre_no_vvpat": 12, "dre_vvpat": 30, "bmd": 1000, "scanner": 1600 },
+    { "stateFips": "53", "state": "Washington", "dre_no_vvpat": 0, "dre_vvpat": 0, "bmd": 950, "scanner": 1400 }
+  ],
+
+  "GUI13_equipment_summary_2024": [
+    { "provider": "ES&S", "model": "DS200",       "qty": 5200, "age": 6, "os": "Win10 IoT", "certification": "VVSG 2.0", "scan_rate": 80, "error_rate": 0.5, "reliability": 0.97, "quality": "A" },
+    { "provider": "ES&S", "model": "ExpressVote", "qty": 2600, "age": 5, "os": "Win10 IoT", "certification": "VVSG 2.0", "scan_rate": 35, "error_rate": 0.6, "reliability": 0.96, "quality": "A-" },
+    { "provider": "Dominion", "model": "ImageCast Precinct", "qty": 4300, "age": 5, "os": "Linux", "certification": "VVSG 2.0", "scan_rate": 90, "error_rate": 0.4, "reliability": 0.98, "quality": "A" },
+    { "provider": "Dominion", "model": "ImageCast X", "qty": 2100, "age": 4, "os": "Linux", "certification": "VVSG 2.0", "scan_rate": 30, "error_rate": 0.7, "reliability": 0.95, "quality": "A-" },
+    { "provider": "Hart", "model": "Verity Scan", "qty": 2200, "age": 5, "os": "Linux", "certification": "VVSG 2.0", "scan_rate": 75, "error_rate": 0.6, "reliability": 0.96, "quality": "A-" },
+    { "provider": "Hart", "model": "Verity Touch", "qty": 1200, "age": 6, "os": "Linux", "certification": "VVSG 2.0", "scan_rate": 28, "error_rate": 0.8, "reliability": 0.94, "quality": "B+" }
+  ],
+
+  "GUI14_equipment_history": {
+    "19": {
+      "dre_no_vvpat": { "2016": 30, "2018": 25, "2020": 22, "2022": 21, "2024": 20 },
+      "dre_vvpat": { "2016": 20, "2018": 18, "2020": 17, "2022": 16, "2024": 15 },
+      "bmd": { "2016": 300, "2018": 500, "2020": 600, "2022": 650, "2024": 700 },
+      "scanner": { "2016": 800, "2018": 1000, "2020": 1100, "2022": 1150, "2024": 1200 }
+    },
+    "25": {
+      "dre_no_vvpat": { "2016": 15, "2018": 12, "2020": 10, "2022": 7, "2024": 5 },
+      "dre_vvpat": { "2016": 20, "2018": 15, "2020": 12, "2022": 10, "2024": 8 },
+      "bmd": { "2016": 500, "2018": 650, "2020": 750, "2022": 850, "2024": 900 },
+      "scanner": { "2016": 1000, "2018": 1100, "2020": 1200, "2022": 1250, "2024": 1300 }
+    }
+  },
+
+  "GUI15_compare_republican_democratic": {
+    "republican": {
+      "stateFips": "19", "state": "Iowa",
+      "felony_rights": "Parole/Probation lose",
+      "pct_mail": 0.20, "pct_dropbox": 0.10, "turnout_pct": 0.63
+    },
+    "democratic": {
+      "stateFips": "25", "state": "Massachusetts",
+      "felony_rights": "Incarc only",
+      "pct_mail": 0.45, "pct_dropbox": 0.25, "turnout_pct": 0.70
+    }
+  },
+
+  "GUI21_registration_optin_optout": {
+    "opt_in": {
+      "stateFips": "37", "state": "North Carolina",
+      "total_vap": 8500000, "registered": 6500000, "turnout_count": 4200000
+    },
+    "opt_out_same_day": {
+      "stateFips": "17", "state": "Illinois",
+      "total_vap": 10000000, "registered": 8000000, "turnout_count": 5600000
+    },
+    "opt_out_no_sdr": {
+      "stateFips": "25", "state": "Massachusetts",
+      "total_vap": 5700000, "registered": 4800000, "turnout_count": 3500000
+    }
+  },
+
+  "GUI22_registration_republican_democratic": {
+    "republican": {
+      "stateFips": "19", "state": "Iowa",
+      "total_vap": 2400000, "registered": 1900000, "turnout_count": 1400000
+    },
+    "democratic": {
+      "stateFips": "25", "state": "Massachusetts",
+      "total_vap": 5700000, "registered": 4800000, "turnout_count": 3500000
+    }
+  },
+
+  "GUI23_early_voting_party_domination": {
+    "dem_dominated": {
+      "stateFips": "25", "state": "Massachusetts",
+      "total_votes": 3600000,
+      "early_in_person": 800000,
+      "early_by_mail": 1000000,
+      "drop_box_returns": 1000000
+    },
+    "rep_dominated": {
+      "stateFips": "19", "state": "Iowa",
+      "total_votes": 1600000,
+      "early_in_person": 400000,
+      "early_by_mail": 250000,
+      "drop_box_returns": 150000
+    }
+  },
+
+  "GUI24_dropbox_bubbles": {
+  "25": [                       
+    { "region": "Boston",          "pct_rep": 0.19, "pct_dropbox": 0.33, "dropbox_votes": 21000 },
+    { "region": "Cambridge",       "pct_rep": 0.12, "pct_dropbox": 0.42, "dropbox_votes": 8000  },
+    { "region": "Worcester",       "pct_rep": 0.36, "pct_dropbox": 0.24, "dropbox_votes": 6200  },
+    { "region": "Springfield",     "pct_rep": 0.28, "pct_dropbox": 0.29, "dropbox_votes": 5100  },
+    { "region": "Lowell",          "pct_rep": 0.34, "pct_dropbox": 0.27, "dropbox_votes": 3500  }
+  ],
+  "19": [                      
+    { "region": "Des Moines",      "pct_rep": 0.47, "pct_dropbox": 0.08, "dropbox_votes": 3900  },
+    { "region": "Cedar Rapids",    "pct_rep": 0.51, "pct_dropbox": 0.06, "dropbox_votes": 2700  },
+    { "region": "Sioux City",      "pct_rep": 0.59, "pct_dropbox": 0.04, "dropbox_votes": 1100  },
+    { "region": "Davenport",       "pct_rep": 0.52, "pct_dropbox": 0.05, "dropbox_votes": 1500  },
+    { "region": "Ames",            "pct_rep": 0.45, "pct_dropbox": 0.07, "dropbox_votes": 1200  }
+  ],
+  "bins": 5
+},
+
+  "GUI17_registration_table": {
+    "53": {
+      "regions": [
+        { "id": "king",     "region": "King",      "registered": 1450000, "dem": 820000, "rep": 320000, "unaff": 280000, "other": 30000, "total": 1650000 },
+        { "id": "pierce",   "region": "Pierce",    "registered": 590000,  "dem": 270000, "rep": 210000, "unaff": 98000,  "other": 12000, "total": 650000 },
+        { "id": "sno",      "region": "Snohomish", "registered": 620000,  "dem": 300000, "rep": 220000, "unaff": 88000,  "other": 12000, "total": 680000 },
+        { "id": "spokane",  "region": "Spokane",   "registered": 360000,  "dem": 140000, "rep": 170000, "unaff": 45000,  "other": 5000,  "total": 395000 },
+        { "id": "okanogan", "region": "Okanogan",  "registered": 28500,   "dem": 9000,   "rep": 15500,  "unaff": 3500,   "other": 500,   "total": 30000 }
+      ]
+    }
+  },
+  "GUI17_registration_map": {
+    "bins": 7,
+    "53": {
+      "values": {
+        "53033": 0.86,
+        "53053": 0.78,
+        "53061": 0.80,
+        "53063": 0.74,
+        "53047": 0.71
+      }
+    }
+  },
+
+
+  "GUI19_registered_voters": {
+    "53": {
+      "counties": {
+        "53033": {
+          "name": "King",
+          "voters": [
+            { "first_name": "Ava", "last_name": "Nguyen", "party": "D", "address_1": "101 Pine St", "city": "Seattle", "state": "WA", "zip": "98101", "dob": "1990-04-11" },
+            { "first_name": "Micah", "last_name": "Roberts", "party": "R", "address_1": "222 Lakeview Ave", "city": "Bellevue", "state": "WA", "zip": "98004", "dob": "1983-07-22" },
+            { "first_name": "Priya", "last_name": "Patel", "party": "D", "address_1": "15 Broadway", "city": "Seattle", "state": "WA", "zip": "98112", "dob": "1996-02-03" }
+          ]
+        },
+        "53047": {
+          "name": "Okanogan",
+          "voters": [
+            { "first_name": "Diego", "last_name": "Ramirez", "party": "R", "address_1": "808 Orchard Rd", "city": "Okanogan", "state": "WA", "zip": "98840", "dob": "1979-10-09" },
+            { "first_name": "Lena", "last_name": "Keller", "party": "D", "address_1": "12 River St", "city": "Omak", "state": "WA", "zip": "98841", "dob": "1988-03-17" }
+          ]
+        },
+        "53053": {
+          "name": "Pierce",
+          "voters": [
+            { "first_name": "Noah", "last_name": "Wright", "party": "R", "address_1": "330 Elm St", "city": "Tacoma", "state": "WA", "zip": "98402", "dob": "1975-09-12" },
+            { "first_name": "Ivy", "last_name": "Zhao", "party": "D", "address_1": "441 Canyon Rd", "city": "Puyallup", "state": "WA", "zip": "98371", "dob": "1992-12-30" }
+          ]
+        },
+        "53061": {
+          "name": "Snohomish",
+          "voters": [
+            { "first_name": "Caleb", "last_name": "Jones", "party": "R", "address_1": "74 Maple Ave", "city": "Everett", "state": "WA", "zip": "98201", "dob": "1981-01-05" },
+            { "first_name": "Sara", "last_name": "Kim", "party": "D", "address_1": "960 Cedar Dr", "city": "Lynnwood", "state": "WA", "zip": "98036", "dob": "1998-08-20" }
+          ]
+        },
+        "53063": {
+          "name": "Spokane",
+          "voters": [
+            { "first_name": "Amir", "last_name": "Hassan", "party": "D", "address_1": "55 Division St", "city": "Spokane", "state": "WA", "zip": "99201", "dob": "1993-05-14" },
+            { "first_name": "Nora", "last_name": "Foster", "party": "R", "address_1": "712 Ridge Rd", "city": "Spokane Valley", "state": "WA", "zip": "99212", "dob": "1986-11-01" }
+          ]
+        }
+      }
+    }
+  }
+}
+
+
+
