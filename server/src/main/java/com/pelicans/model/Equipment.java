@@ -9,6 +9,15 @@ import java.util.Map;
 @Document(collection = "equipment")
 @CompoundIndex(name = "provider_model_idx", def = "{'provider':1,'model':1}")
 public class Equipment {
+
+    public Equipment(String model, int quantity, String os, Certification certification, boolean isDiscontinued) {
+        this.model = model;
+        this.quantity = quantity;
+        this.os = os;
+        this.certification = certification;
+        this.isDiscontinued = isDiscontinued;
+    }
+
     public enum Category { scanner, DRE_no_VVPAT, DRE_with_VVPAT, BMD }
     public enum Certification { VVSG_2_0_cert, VVSG_2_0_applied, VVSG_1_1, VVSG_1_0, none }
 
@@ -26,6 +35,8 @@ public class Equipment {
     private Double qualityScore;
     private Date createdAt;
     private Date updatedAt;
+    public Integer quantity;
+    private String os;
 
     // getters/setters
     public String getId() { return id; }
@@ -54,4 +65,8 @@ public class Equipment {
     public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
     public Date getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
+    public Integer getQuantity() { return quantity; }
+    public void setQuantity(Integer quantity) { this.quantity = quantity; }
+    public String getOs() { return os; }
+    public void setOs(String os) { this.os = os; }
 }

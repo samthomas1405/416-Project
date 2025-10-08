@@ -12,7 +12,7 @@ import java.nio.file.Files;
 import java.io.IOException;
 
 @RestController
-@RequestMapping("/json")
+@RequestMapping("/api/json")
 public class JsonController {
 
   String usStates;
@@ -27,13 +27,13 @@ public class JsonController {
 
   @CrossOrigin
   @GetMapping("/us-states")
-  public ResponseEntity<String> usStatesJson() throws IOException {
+  public ResponseEntity<String> usStatesJson() {
       return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(usStates);
   }
 
   @CrossOrigin
   @GetMapping("/us-counties")
-  public ResponseEntity<String> usCountiesJson() throws IOException {
+  public ResponseEntity<String> usCountiesJson() {
       return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(usCounties);
   }
 

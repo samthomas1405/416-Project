@@ -119,7 +119,7 @@ function SelectedStateLayer({ stateId, style }) {
 
   React.useEffect(() => {
     // fetch("/us-states.json")
-    axios.get("http://localhost:8080/json/us-states")
+    axios.get("http://localhost:8080/api/json/us-states")
       .then(res => setGj(res.data))
       .catch(e => console.error("load us-states.json failed", e));
   }, []);
@@ -154,6 +154,18 @@ function SelectedStateLayer({ stateId, style }) {
 // ---- State View ------------------------------------------------------------
 function StateView({ stateId, stateName, initialBounds, activeTab, onChangeTab, eavsCategory, onChangeEavs, onBack }) {
   const stateNameComputed = stateName ?? stateId;
+
+  const [equipment, setEquipment] = React.useState(null);
+
+  React.useEffect(() => {
+    // fetch("/us-states.json")
+    axios.get("http://localhost:8080/api/equipment/")
+      .then(res => {
+        console.log("received", res)
+        setEquipment(res.data);
+  })
+      .catch(e => console.error("load equipment", e));
+  }, []);
 
   return (
     <main className="mx-auto max-w-screen-2xl px-4 py-4" style={{height: "calc(100vh - 64px)"}}>
@@ -283,7 +295,7 @@ function StateView({ stateId, stateName, initialBounds, activeTab, onChangeTab, 
 
             {/* EQUIPMENT */}
             <Card title="Equipment (by make/model)">
-              <EquipmentTable rows={SAMPLE_EQUIPMENT} pageSize={3} />
+              <EquipmentTable rows={equipment} pageSize={3} />
             </Card>
           </div>
         </section>
@@ -315,7 +327,7 @@ function DetailedCountyLayer({
   React.useEffect(() => {
     if (CACHE_US_COUNTIES) return;
     // fetch(source)
-    axios.get("http://localhost:8080/json/us-counties")
+    axios.get("http://localhost:8080/api/json/us-counties")
       .then(res => { CACHE_US_COUNTIES = res.data; setGj(res.data); })
       .catch(e => console.error("Failed to load counties:", e));
   }, [source]);
@@ -392,7 +404,7 @@ function USStatesLayer({ onClickState }) {
 
   React.useEffect(() => {
     // fetch("/us-states.json")
-    axios.get("http://localhost:8080/json/us-states")
+    axios.get("http://localhost:8080/api/json/us-states")
       .then((res) => setGeojson(res.data))
       .catch((e) => console.error("Failed to load us-states.json", e));
   }, []);
@@ -594,6 +606,7 @@ function EquipmentTable({ rows, pageSize = 6 }) {
   const [sortBy, setSortBy] = React.useState({ key: "model", dir: "asc" });
 
   const sorted = React.useMemo(() => {
+    if (rows == null) { return; }
     const data = rows.slice();
     const { key, dir } = sortBy;
     data.sort((a, b) => {
@@ -607,6 +620,8 @@ function EquipmentTable({ rows, pageSize = 6 }) {
     });
     return data;
   }, [rows, sortBy]);
+
+  if (rows == null) { return; }
 
   const pages = Math.max(1, Math.ceil(sorted.length / pageSize));
   const start = page * pageSize;
@@ -647,11 +662,11 @@ function EquipmentTable({ rows, pageSize = 6 }) {
           {current.map((r, i) => (
             <tr key={r.id ?? `${r.model}-${i}`} className="border-t border-neutral-800">
               <td className="p-2">{r.model}</td>
-              <td className="p-2 text-right">{r.qty}</td>
+              <td className="p-2 text-right">{r.quantity}</td>
               <td className="p-2">{r.os}</td>
-              <td className="p-2">{r.vvsg}</td>
-              <td className={`p-2 ${r.status === "Retired" ? "text-red-400" : "text-neutral-300"}`}>
-                {r.status}
+              <td className="p-2">{r.certification}</td>
+              <td className={`p-2 ${r.isDiscontinued === true ? "text-red-400" : "text-neutral-300"}`}>
+                {String(r.isDiscontinued)}
               </td>
             </tr>
           ))}
