@@ -3,6 +3,7 @@ import { MapContainer, GeoJSON, useMap, TileLayer } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import * as d3 from "d3";
+import axios from 'axios';
 
 // --- MUI core ---
 import {
@@ -47,7 +48,7 @@ import CloseIcon from "@mui/icons-material/Close"
 
 
 
-//temporary since we do not have dummy data for county boundaries. 
+//temporary since we do not have dummy data for county boundaries.
 // later on when we develop DB maybe we get rid of this
 let CACHE_US_COUNTIES = null;
 const DETAILED_STATES = new Set(["17","25","37","19","53"]);
@@ -929,9 +930,9 @@ function SelectedStateLayer({ stateId, style }) {
   const map = useMap();
 
   React.useEffect(() => {
-    fetch("/us-states.json")
-      .then(r => r.json())
-      .then(setGj)
+    // fetch("/us-states.json")
+    axios.get("http://localhost:8080/api/json/us-states")
+      .then(res => setGj(res.data))
       .catch(e => console.error("load us-states.json failed", e));
   }, []);
 
@@ -971,6 +972,15 @@ function EavsPicker({ value, onChange, stateId }) {
     () => (String(stateId) === "53" ? [...BASE, "Registered Voters"] : BASE),
     [stateId]
   );
+
+  const [equipment, setEquipment] = React.useState([]);
+
+  React.useEffect(() => {
+    // fetch("/us-states.json")
+    axios.get(`http://localhost:8080/api/equipment/${stateId}`)
+      .then(res => setEquipment(res.data))
+      .catch(e => console.error("load equipment", e));
+  }, []);
 
   return (
     <FormControl size="small" sx={{ minWidth: 240 }}>
@@ -1547,9 +1557,9 @@ function DetailedCountyLayer({
   // load once (and cache)
   React.useEffect(() => {
     if (CACHE_US_COUNTIES) return;
-    fetch(source)
-      .then(r => r.json())
-      .then(json => { CACHE_US_COUNTIES = json; setGj(json); })
+    // fetch(source)
+    axios.get("http://localhost:8080/api/json/us-counties")
+      .then(res => { CACHE_US_COUNTIES = res.data; setGj(res.data); })
       .catch(e => console.error("Failed to load counties:", e));
   }, [source]);
 
@@ -1689,9 +1699,9 @@ function USStatesLayer({ onClickState }) {
   const map = useMap();
 
   React.useEffect(() => {
-    fetch("/us-states.json")
-      .then((r) => r.json())
-      .then(setGeojson)
+    // fetch("/us-states.json")
+    axios.get("http://localhost:8080/api/json/us-states")
+      .then((res) => setGeojson(res.data))
       .catch((e) => console.error("Failed to load us-states.json", e));
   }, []);
 
