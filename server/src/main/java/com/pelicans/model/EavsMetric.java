@@ -1,4 +1,4 @@
-package com.example.votingdata.test;
+package com.pelicans.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
