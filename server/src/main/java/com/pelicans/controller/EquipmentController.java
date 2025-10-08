@@ -4,6 +4,7 @@ import com.pelicans.model.Equipment;
 import com.pelicans.repository.EquipmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,9 +26,9 @@ public class EquipmentController {
   }
 
   @CrossOrigin
-  @GetMapping("/")
-  public List<Equipment> getEquipment() {
-    return equipmentRepository.findAll();
+  @GetMapping("/{stateId}")
+  public List<Equipment> getEquipment(@PathVariable String stateId) {
+    return equipmentRepository.findByStateId(stateId);
   }
 
 }

@@ -155,15 +155,12 @@ function SelectedStateLayer({ stateId, style }) {
 function StateView({ stateId, stateName, initialBounds, activeTab, onChangeTab, eavsCategory, onChangeEavs, onBack }) {
   const stateNameComputed = stateName ?? stateId;
 
-  const [equipment, setEquipment] = React.useState(null);
+  const [equipment, setEquipment] = React.useState([]);
 
   React.useEffect(() => {
     // fetch("/us-states.json")
-    axios.get("http://localhost:8080/api/equipment/")
-      .then(res => {
-        console.log("received", res)
-        setEquipment(res.data);
-  })
+    axios.get(`http://localhost:8080/api/equipment/${stateId}`)
+      .then(res => setEquipment(res.data))
       .catch(e => console.error("load equipment", e));
   }, []);
 
@@ -606,7 +603,6 @@ function EquipmentTable({ rows, pageSize = 6 }) {
   const [sortBy, setSortBy] = React.useState({ key: "model", dir: "asc" });
 
   const sorted = React.useMemo(() => {
-    if (rows == null) { return; }
     const data = rows.slice();
     const { key, dir } = sortBy;
     data.sort((a, b) => {
@@ -620,8 +616,6 @@ function EquipmentTable({ rows, pageSize = 6 }) {
     });
     return data;
   }, [rows, sortBy]);
-
-  if (rows == null) { return; }
 
   const pages = Math.max(1, Math.ceil(sorted.length / pageSize));
   const start = page * pageSize;
