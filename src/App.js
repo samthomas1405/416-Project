@@ -3,8 +3,9 @@ import { MapContainer, GeoJSON, useMap, TileLayer} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import * as d3 from "d3";
+import axios from 'axios';
 
-//temporary since we do not have dummy data for county boundaries. 
+//temporary since we do not have dummy data for county boundaries.
 // later on when we develop DB maybe we get rid of this
 let CACHE_US_COUNTIES = null;
 const DETAILED_STATES = new Set(["17","25","37","19","53"]);
@@ -37,10 +38,10 @@ export default function App() {
 
       {route.view === "us" ? (
         <USLanding onSelectState={(payload)=> {
-          //console.log("clicked payload:", payload); 
-          const {id, name, bounds} = payload; 
+          // console.log("clicked payload:", payload);
+          const {id, name, bounds} = payload;
           setRoute({ view: "state", id, name, bounds });
-        }} 
+        }}
         />
       ) : (
         <StateView
@@ -94,7 +95,7 @@ function USLanding({ onSelectState }) {
 
       <aside className="md:col-span-2 flex flex-col gap-4">
         {/*maybe change to a tab on the left */}
-        <Card title="Splash buttons (placeholders)"> 
+        <Card title="Splash buttons (placeholders)">
           <div className="grid grid-cols-2 gap-3 text-sm">
             <Placeholder label="Equipment by State" />
             <Placeholder label="US Equipment Summary" />
@@ -117,9 +118,9 @@ function SelectedStateLayer({ stateId, style }) {
   const map = useMap();
 
   React.useEffect(() => {
-    fetch("/us-states.json")
-      .then(r => r.json())
-      .then(setGj)
+    // fetch("/us-states.json")
+    axios.get("http://localhost:8080/json/us-states")
+      .then(res => setGj(res.data))
       .catch(e => console.error("load us-states.json failed", e));
   }, []);
 
@@ -185,7 +186,7 @@ function StateView({ stateId, stateName, initialBounds, activeTab, onChangeTab, 
                 {isDetailed(stateId) ? <DetailedCountyLayer stateFips={stateId} source="/us-counties.json"/>:
                 <SelectedStateLayer stateId={stateId}/>
                 }
-                
+
               </LeafletMap>
             </div>
           </Card>
@@ -313,9 +314,9 @@ function DetailedCountyLayer({
   // load (and cache) the national file
   React.useEffect(() => {
     if (CACHE_US_COUNTIES) return;
-    fetch(source)
-      .then(r => r.json())
-      .then(json => { CACHE_US_COUNTIES = json; setGj(json); })
+    // fetch(source)
+    axios.get("http://localhost:8080/json/us-counties")
+      .then(res => { CACHE_US_COUNTIES = res.data; setGj(res.data); })
       .catch(e => console.error("Failed to load counties:", e));
   }, [source]);
 
@@ -390,9 +391,9 @@ function USStatesLayer({ onClickState }) {
   const map = useMap();
 
   React.useEffect(() => {
-    fetch("/us-states.json")
-      .then((r) => r.json())
-      .then(setGeojson)
+    // fetch("/us-states.json")
+    axios.get("http://localhost:8080/json/us-states")
+      .then((res) => setGeojson(res.data))
       .catch((e) => console.error("Failed to load us-states.json", e));
   }, []);
 
