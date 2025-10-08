@@ -15,20 +15,26 @@ import java.io.IOException;
 @RequestMapping("/json")
 public class JsonController {
 
+  String usStates;
+  String usCounties;
+
+  public JsonController() throws IOException {
+      Resource resource = new ClassPathResource("us-states.json");
+      usStates = new String(Files.readAllBytes(resource.getFile().toPath()));
+      resource = new ClassPathResource("us-counties.json");
+      usCounties = new String(Files.readAllBytes(resource.getFile().toPath()));
+  }
+
   @CrossOrigin
   @GetMapping("/us-states")
   public ResponseEntity<String> usStatesJson() throws IOException {
-      Resource resource = new ClassPathResource("us-states.json");
-      String content = new String(Files.readAllBytes(resource.getFile().toPath()));
-      return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(content);
+      return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(usStates);
   }
 
   @CrossOrigin
   @GetMapping("/us-counties")
   public ResponseEntity<String> usCountiesJson() throws IOException {
-      Resource resource = new ClassPathResource("us-counties.json");
-      String content = new String(Files.readAllBytes(resource.getFile().toPath()));
-      return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(content);
+      return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(usCounties);
   }
 
 }
