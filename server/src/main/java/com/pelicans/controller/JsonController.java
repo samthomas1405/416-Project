@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import java.nio.file.Files;
 import java.io.IOException;
 
+@CrossOrigin
 @RestController
 @RequestMapping("/api/json")
 public class JsonController {
@@ -25,13 +26,11 @@ public class JsonController {
       usCounties = new String(Files.readAllBytes(resource.getFile().toPath()));
   }
 
-  @CrossOrigin
   @GetMapping("/us-states")
   public ResponseEntity<String> usStatesJson() {
       return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(usStates);
   }
 
-  @CrossOrigin
   @GetMapping("/us-counties")
   public ResponseEntity<String> usCountiesJson() {
       return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(usCounties);

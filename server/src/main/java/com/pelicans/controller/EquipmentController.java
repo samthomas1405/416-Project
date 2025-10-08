@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
 
+@CrossOrigin
 @RestController
 @RequestMapping("/api/equipment")
 public class EquipmentController {
@@ -25,7 +26,6 @@ public class EquipmentController {
     equipmentRepository.save(test);
   }
 
-  @CrossOrigin
   @GetMapping("/{stateId}")
   public List<Equipment> getEquipment(@PathVariable String stateId) {
     return equipmentRepository.findByStateId(stateId);
