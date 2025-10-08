@@ -5,6 +5,8 @@ import "leaflet/dist/leaflet.css";
 import * as d3 from "d3";
 import axios from 'axios';
 
+
+//BREAKING INTO COMPONENTS OVER FALL BREAK SORRY FOR MESSY CODE
 // --- MUI core ---
 import {
   ThemeProvider,
