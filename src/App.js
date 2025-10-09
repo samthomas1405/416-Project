@@ -54,7 +54,7 @@ import CloseIcon from "@mui/icons-material/Close"
 // later on when we develop DB maybe we get rid of this
 let CACHE_US_COUNTIES = null;
 const DETAILED_STATES = new Set(["17","25","37","19","53"]);
-
+let CACHE_CHORO_DOC = null; // module-level cache so we fetch once
 function isDetailed(fips) {
   return DETAILED_STATES.has(String(fips));
 }
@@ -86,27 +86,73 @@ function useE2LegendMap(data, stateId) {
   return map;
 }
 
-function useE1aChoropleth(data, stateId, binsFallback = 7) {
-  const s = data?.GUI05_provisional_choropleth_e1a;
-  const entry = s?.[stateId];
-  const raw = entry?.values || {};
-  const bins = s?.bins ?? binsFallback;
+function useE1aChoroplethAPI(stateId, preferredBins = 7) {
+  const stateFips = String(stateId);
 
-  // convert to Map<GEOID, number>
-  const m = React.useMemo(() => {
-    const mm = new Map();
-    for (const k in raw) mm.set(String(k), Number(raw[k]));
-    return mm;
-  }, [raw]);
+  const [valuesObj, setValuesObj] = React.useState(null);
 
-  // compute domain & colors (monochrome)
-  const vals = Array.from(m.values());
-  const domain = vals.length ? d3.extent(vals) : [0, 1];
-  const colors = d3.range(bins).map(i => d3.interpolateBlues((i + 1) / bins));
-  const scale = d3.scaleQuantize().domain(domain).range(colors);
+  React.useEffect(() => {
+    let cancelled = false;
 
-  return { dataMap: m, bins, scale, colors, domain };
+    if (!DETAILED_STATES.has(stateFips)) {
+      setValuesObj(null);
+      return;
+    }
+
+    (async () => {
+      try {
+        const res = await axios.get("http://localhost:8080/api/choropleth/2024/E1A/state", {
+          params: { state: stateFips }
+        });
+        if (!cancelled) setValuesObj(res?.data?.values || {});
+      } catch (err) {
+        console.error("choropleth API failed:", err);
+        if (!cancelled) setValuesObj(null);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [stateFips]);
+
+  // Map of countyFips -> value
+  const dataMap = React.useMemo(() => {
+    const m = new Map();
+    if (valuesObj) {
+      for (const [k, v] of Object.entries(valuesObj)) m.set(String(k), Number(v));
+    }
+    return m;
+  }, [valuesObj]);
+
+  const vals = React.useMemo(() => Array.from(dataMap.values()).filter(Number.isFinite), [dataMap]);
+
+  // Decide bin count: clamp to [5,10], and don’t exceed the number of distinct values.
+  const binCount = React.useMemo(() => {
+    if (!vals.length) return 0;
+    const distinct = new Set(vals).size;
+    const desired = Math.max(5, Math.min(10, preferredBins));
+    return Math.min(desired, distinct);
+  }, [vals, preferredBins]);
+
+  // Build a monochromatic color ramp
+  const colors = React.useMemo(() => {
+    if (binCount <= 0) return [];
+    return d3.range(binCount).map(i => d3.interpolateBlues((i + 1) / binCount));
+  }, [binCount]);
+
+  // Use quantiles so bins are well-populated even with skewed data
+  const scale = React.useMemo(() => {
+    if (!vals.length || colors.length === 0) return null;
+    return d3.scaleQuantile().domain(vals).range(colors);
+  }, [vals, colors]);
+
+  // For legends, you can read scale.quantiles() to get thresholds
+  const domain = React.useMemo(() => {
+    return vals.length ? d3.extent(vals) : [0, 1];
+  }, [vals]);
+
+  return { dataMap, binCount, scale, colors, domain };
 }
+
 
 function ChoroplethLegend({ domain, colors, format = d3.format(",") }) {
   if (!colors?.length) return null;
@@ -1376,7 +1422,20 @@ function StateView({ stateId, stateName, initialBounds, eavsCategory, onChangeEa
   };
 
   // Maps/Legends (Provisional E1a + Active % + optional Registered %)
-  const { dataMap: e1Map, colors: e1Colors, domain: e1Domain } = useE1aChoropleth(data, stateId);
+  // Maps/Legends (Provisional E1a + Active % + optional Registered %)
+  // Prefer backend choropleth for the 5 focus states; otherwise fall back to dummy
+  const apiE1   = useE1aChoroplethAPI(stateId);
+  // Only show E1a choropleth on detailed states (the 5 focus states) and only
+  // when NOT in Active or Registered modes.
+  const showE1ChoroOnly =
+    isDetailed(stateId) &&
+    !activeMode &&
+    !registeredMode &&
+    apiE1?.dataMap?.size > 0;
+
+  const { dataMap: e1Map, colors: e1Colors, domain: e1Domain } = apiE1;
+
+
   const { dataMap: actMap, colors: actColors, domain: actDomain } = useActiveChoropleth(data, stateId);
 
   // Registered choropleth (GUI-17) — safe alias
@@ -1452,11 +1511,7 @@ function StateView({ stateId, stateName, initialBounds, eavsCategory, onChangeEa
                 <DetailedCountyLayer
                   stateFips={stateId}
                   source="/us-counties.json"
-                  dataMap={
-                    showChoropleth
-                      ? (registeredMode ? regMap : activeMode ? actMap : e1Map)
-                      : undefined
-                  }
+                  dataMap={showE1ChoroOnly ? e1Map : undefined}
                   bins={7}
                   onFeatureClick={(feature) => {
                     const geoid = String(feature?.properties?.GEOID);
@@ -1465,6 +1520,13 @@ function StateView({ stateId, stateName, initialBounds, eavsCategory, onChangeEa
                 />
               ) : (
                 <SelectedStateLayer stateId={stateId} />
+              )}
+              {showE1ChoroOnly && (
+                <ChoroplethLegend
+                  domain={e1Domain}
+                  colors={e1Colors}
+                  format={d3.format(",")}
+                />
               )}
             </LeafletMap>
           </Box>
