@@ -1,45 +1,53 @@
 package com.pelicans.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-import java.util.Date;
+// import org.springframework.data.mongodb.core.index.CompoundIndex;
+// import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(collection = "states")
+// @Document(collection = "state_summaries")
+// @CompoundIndex(name = "state_year_unique", def = "{'stateId':1,'year':1}", unique = true)
 public class State {
-    @Id
-    private String id;          // USPS code, e.g. "NY"
-    private String name;
-    private GeoPoint center;    // GeoJSON Point
-    private int mapZoom;
-    private Date createdAt;
-    private Date updatedAt;
+    private String stateFips;
+    private String party;
+    private String state;
+    private String felony_rights;
+    private Double pct_mail;
+    private Double pct_dropbox;
+    private Double turnout_pct;
+    private Integer total_vap;
+    private Integer registered;
+    private Integer turnout_count;
+    private Integer total_votes;
+    private Integer early_in_person;
+    private Integer early_by_mail;
+    private Integer drop_box_returns;
 
-    // ---- Geo helpers ----
-    public static class GeoPoint {
-        private String type;        // "Point"
-        private double[] coordinates; // [lng, lat]
-        public GeoPoint() {}
-        public GeoPoint(double lng, double lat) {
-            this.type = "Point";
-            this.coordinates = new double[]{lng, lat};
-        }
-        public String getType() { return type; }
-        public void setType(String type) { this.type = type; }
-        public double[] getCoordinates() { return coordinates; }
-        public void setCoordinates(double[] coordinates) { this.coordinates = coordinates; }
-    }
-
-    // ---- getters/setters ----
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public GeoPoint getCenter() { return center; }
-    public void setCenter(GeoPoint center) { this.center = center; }
-    public int getMapZoom() { return mapZoom; }
-    public void setMapZoom(int mapZoom) { this.mapZoom = mapZoom; }
-    public Date getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
-    public Date getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
+    // getters/setters
+    public String getStateFips() { return stateFips; }
+    public void setStateFips(String stateFips) { this.stateFips = stateFips; }
+    public String getParty() { return party; }
+    public void setParty(String party) { this.party = party; }
+    public String getState() { return state; }
+    public void setState(String state) { this.state = state; }
+    public String getFelonyRights() { return felony_rights; }
+    public void setFelonyRights(String felony_rights) { this.felony_rights = felony_rights; }
+    public Double getPctMail() { return pct_mail; }
+    public void setPctMail(Double pct_mail) { this.pct_mail = pct_mail; }
+    public Double getPctDropbox() { return pct_dropbox; }
+    public void setPctDropbox(Double pct_dropbox) { this.pct_dropbox = pct_dropbox; }
+    public Double getTurnoutPct() { return turnout_pct; }
+    public void setTurnoutPct(Double turnout_pct) { this.turnout_pct = turnout_pct; }
+    public Integer getTotalVap() { return total_vap; }
+    public void setTotalVap(Integer total_vap) { this.total_vap = total_vap; }
+    public Integer getRegistered() { return registered; }
+    public void setRegistered(Integer registered) { this.registered = registered; }
+    public Integer getTurnoutCount() { return turnout_count; }
+    public void setTurnoutCount(Integer turnout_count) { this.turnout_count = turnout_count; }
+    public Integer getTotalVotes() { return total_votes; }
+    public void setTotalVotes(Integer total_votes) { this.total_votes = total_votes; }
+    public Integer getEarlyInPerson() { return early_in_person; }
+    public void setEarlyInPerson(Integer early_in_person) { this.early_in_person = early_in_person; }
+    public Integer getEarlyByMail() { return early_by_mail; }
+    public void setEarlyByMail(Integer early_by_mail) { this.early_by_mail = early_by_mail; }
+    public Integer getDropBoxReturns() { return drop_box_returns; }
+    public void setDropBoxReturns(Integer drop_box_returns) { this.drop_box_returns = drop_box_returns; }
 }

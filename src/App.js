@@ -206,7 +206,7 @@ export default function AppShell(){
 function App() {
   const [route, setRoute] = useState({ view: "us" }); // {view:'us'} | {view:'state', id:'NY'}
   const [activeTab, setActiveTab] = useState("summary"); // 'summary' | 'eavs' | 'registration' | 'equipment'
-  const [eavsCategory, setEavsCategory] = useState("Provisional Ballots"); 
+  const [eavsCategory, setEavsCategory] = useState("Provisional Ballots");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelView, setPanelView] = useState(null);
@@ -214,28 +214,28 @@ function App() {
   return (
     <Box sx={{ height: "100vh", bgcolor: "background.default", color: "text.primary" }}>
       <TopNav onReset={() => { setRoute({ view: "us" }); setActiveTab("summary"); setDrawerOpen(false); setPanelOpen(false)}}
-        showMenu = {route.view == "us"} 
+        showMenu = {route.view == "us"}
         onOpenMenu={()=> setDrawerOpen(true)}
       />
 
-      <LeftDrawer 
-        open={drawerOpen} 
-        onClose= {() => setDrawerOpen(false)} 
+      <LeftDrawer
+        open={drawerOpen}
+        onClose= {() => setDrawerOpen(false)}
         onPick= {(id) => {setDrawerOpen(false); setPanelView(id); setPanelOpen(true)}}
       />
       {route.view === "us" ? (
-        <USLanding 
-          drawerOpen= {drawerOpen} 
-          panelOpen={panelOpen} 
-          panelView={panelView} 
-          onClosePanel = {()=>setPanelOpen(false)} 
+        <USLanding
+          drawerOpen= {drawerOpen}
+          panelOpen={panelOpen}
+          panelView={panelView}
+          onClosePanel = {()=>setPanelOpen(false)}
           onSelectState={(payload)=> {
-            //console.log("clicked payload:", payload); 
-            const {id, name, bounds} = payload; 
+            //console.log("clicked payload:", payload);
+            const {id, name, bounds} = payload;
             setRoute({ view: "state", id, name, bounds });
             setPanelOpen(false);
-            } 
-          } 
+            }
+          }
         />
       ) : (
         <StateView
@@ -250,7 +250,7 @@ function App() {
         />
       )}
     </Box>
-    
+
   );
 
   function setEAVS(v) { setEavsCategory(v); }
@@ -350,6 +350,27 @@ function useDummyData() {
 }
 
 function PanelContent({ view }) {
+  const [compare, setCompare] = useState({
+    democratic: undefined, republican: undefined
+  })
+
+  // using hardcoded democratic and republican fips
+  React.useEffect(() => {
+    axios.get("http://localhost:8080/api/state/19")
+      .then(res => setCompare((comp) => ({
+        ...comp, republican: res
+      })))
+      .catch(e => console.error("fetch republican state failed", e));
+  }, []);
+
+  React.useEffect(() => {
+    axios.get("http://localhost:8080/api/state/25")
+      .then(res => setCompare((comp) => ({
+        ...comp, democratic: res
+      })))
+      .catch(e => console.error("fetch democrat state failed", e));
+  }, []);
+
   const data = useDummyData();
   if (!view) {
     return <Typography variant="body2" color="text.secondary">Select an item from the menu.</Typography>;
@@ -366,12 +387,12 @@ function PanelContent({ view }) {
       return(
         <>
           <CompareRDBlock
-      data15={data.GUI15_compare_republican_democratic}
-      data22={data.GUI22_registration_republican_democratic}
-      data23={data.GUI23_early_voting_party_domination}
+      data15={compare}
+      data22={compare}
+      data23={compare}
     />
         </>
-      ) 
+      )
     case "regOptInOut":
       return <RegOptInOutTable obj={data.GUI21_registration_optin_optout || []} />;
     default:
@@ -441,8 +462,8 @@ function EarlyVotingTable({ obj, tableProps = {}}) {
   if (!obj) return <Typography variant="body2" color="text.secondary">No data available.</Typography>;
   const { dense } = tableProps;
 
-  const dem = obj.dem_dominated ?? {};
-  const rep = obj.rep_dominated ?? {};
+  const dem = obj.democratic ?? {};
+  const rep = obj.republican ?? {};
   const fNum = d3.format(",");
   const fPct1 = d3.format(".1%");
 
@@ -1732,17 +1753,17 @@ function InvalidateOnResize({ resizeSignal }) {
 // ---- Leaflet Map Wrapper ---------------------------------------------------
 function LeafletMap({ center, zoom, children, initialBounds, disabled = false, resizeSignal }) {
   return (
-    <MapContainer 
-    center={center} 
-    zoom={zoom} 
-    zoomSnap={0.1} 
-    zoomDelta={0.5} 
+    <MapContainer
+    center={center}
+    zoom={zoom}
+    zoomSnap={0.1}
+    zoomDelta={0.5}
     style={{height: '100%', width: '100%', background: "#F4F3EE"}}
     className={disabled?"pointer-events-none": ""}
-    attributionControl ={false} 
-    preferCanvas = {true} 
-    zoomControl={true} 
-    scrollWheelZoom = {true} 
+    attributionControl ={false}
+    preferCanvas = {true}
+    zoomControl={true}
+    scrollWheelZoom = {true}
     dragging = {true}
     whenCreated = {(m)=> setTimeout(() => m.invalidateSize(), 0)}
     >

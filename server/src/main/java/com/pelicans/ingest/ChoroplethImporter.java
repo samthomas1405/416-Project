@@ -4,7 +4,7 @@ package com.pelicans.ingest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pelicans.model.ProvisionalChoroplethDoc;
-import com.pelicans.repo.ProvisionalChoroplethRepository;
+import com.pelicans.repository.ProvisionalChoroplethRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;

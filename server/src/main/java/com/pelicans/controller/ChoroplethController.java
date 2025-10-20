@@ -1,7 +1,7 @@
 package com.pelicans.controller;
 
 import com.pelicans.model.ProvisionalChoroplethDoc;
-import com.pelicans.repo.ProvisionalChoroplethRepository;
+import com.pelicans.repository.ProvisionalChoroplethRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
