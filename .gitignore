@@ -23,3 +23,10 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# large data directories
+/data/
+/data_clean/
+/data_clean_extracted/
+/data_clean.zip
+/data_clean_extracted.zip
