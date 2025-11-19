@@ -62,7 +62,7 @@ public class GeoStatesImporter implements CommandLineRunner {
                 }
 
                 GeoStateDoc state = new GeoStateDoc();
-                state.setId(stateAbbr.toUpperCase(Locale.US));
+                state.setId(stateFips);
                 state.setStateAbbr(stateAbbr.toUpperCase(Locale.US));
                 state.setStateName(stateName);
                 state.setStateFips(stateFips);

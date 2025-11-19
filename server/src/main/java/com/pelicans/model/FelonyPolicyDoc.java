@@ -9,8 +9,9 @@ import java.util.Map;
 @Document(collection = "FelonyPolicy")
 public class FelonyPolicyDoc {
     @Id
-    private String id;  // stateAbbr
+    private String id;  // stateFips
     private String stateAbbr;
+    private String stateFips;
     private String stateFull;
     private Map<String, String> q51Fields;  // All Q51_* fields
     private Date createdAt;
@@ -26,6 +27,8 @@ public class FelonyPolicyDoc {
     public void setId(String id) { this.id = id; }
     public String getStateAbbr() { return stateAbbr; }
     public void setStateAbbr(String stateAbbr) { this.stateAbbr = stateAbbr; }
+    public String getStateFips() { return stateFips; }
+    public void setStateFips(String stateFips) { this.stateFips = stateFips; }
     public String getStateFull() { return stateFull; }
     public void setStateFull(String stateFull) { this.stateFull = stateFull; }
     public Map<String, String> getQ51Fields() { return q51Fields; }

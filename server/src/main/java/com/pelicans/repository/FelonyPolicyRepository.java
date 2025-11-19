@@ -9,6 +9,7 @@ import java.util.Optional;
 @Repository
 public interface FelonyPolicyRepository extends MongoRepository<FelonyPolicyDoc, String> {
     Optional<FelonyPolicyDoc> findByStateAbbr(String stateAbbr);
+    Optional<FelonyPolicyDoc> findByStateFips(String stateFips);
 }
 
 

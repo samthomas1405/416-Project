@@ -9,7 +9,7 @@ import java.util.Date;
 public class GeoStateDoc {
 
     @Id
-    private String id; // stateAbbr
+    private String id; // stateFips
     private String stateAbbr;
     private String stateFips;
     private String stateName;

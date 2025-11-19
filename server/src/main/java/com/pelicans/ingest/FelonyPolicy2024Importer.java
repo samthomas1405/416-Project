@@ -3,7 +3,11 @@ package com.pelicans.ingest;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
 import com.pelicans.model.FelonyPolicyDoc;
+import com.pelicans.model.StateDoc;
+import com.pelicans.model.GeoStateDoc;
 import com.pelicans.repository.FelonyPolicyRepository;
+import com.pelicans.repository.StateRepository;
+import com.pelicans.repository.GeoStateRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -12,18 +16,23 @@ import org.springframework.stereotype.Component;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
+import java.util.Optional;
 
 @Component
 @ConditionalOnProperty(name = "felony.policy.enabled", havingValue = "true", matchIfMissing = false)
 public class FelonyPolicy2024Importer implements CommandLineRunner {
 
     private final FelonyPolicyRepository repo;
+    private final StateRepository stateRepo;
+    private final GeoStateRepository geoStateRepo;
 
     @Value("${felony.policy.input:data_clean/eavs/felony_policy_2024_q51.csv}")
     private String inputPath;
 
-    public FelonyPolicy2024Importer(FelonyPolicyRepository repo) {
+    public FelonyPolicy2024Importer(FelonyPolicyRepository repo, StateRepository stateRepo, GeoStateRepository geoStateRepo) {
         this.repo = repo;
+        this.stateRepo = stateRepo;
+        this.geoStateRepo = geoStateRepo;
     }
 
     @Override
@@ -67,11 +76,31 @@ public class FelonyPolicy2024Importer implements CommandLineRunner {
                     continue;
                 }
 
-                String docId = stateAbbr.toUpperCase();
+                stateAbbr = stateAbbr.toUpperCase();
+                
+                // Look up stateFips from StateDoc or GeoStateDoc
+                String stateFips = null;
+                Optional<StateDoc> stateOpt = stateRepo.findByStateAbbr(stateAbbr);
+                if (stateOpt.isPresent()) {
+                    stateFips = stateOpt.get().getStateFips();
+                } else {
+                    // Fallback to GeoStateDoc
+                    Optional<GeoStateDoc> geoStateOpt = geoStateRepo.findByStateAbbr(stateAbbr);
+                    if (geoStateOpt.isPresent()) {
+                        stateFips = geoStateOpt.get().getStateFips();
+                    }
+                }
+                
+                if (stateFips == null || stateFips.isEmpty()) {
+                    System.err.println("[FelonyPolicy2024Importer] Warning: Could not find stateFips for " + stateAbbr + ", skipping");
+                    skipped++;
+                    continue;
+                }
 
                 FelonyPolicyDoc policy = new FelonyPolicyDoc();
-                policy.setId(docId);
-                policy.setStateAbbr(stateAbbr.toUpperCase());
+                policy.setId(stateFips);
+                policy.setStateAbbr(stateAbbr);
+                policy.setStateFips(stateFips);
                 policy.setStateFull(getValue(row, colIndex, "state_full"));
 
                 // Store all Q51 fields in a map
