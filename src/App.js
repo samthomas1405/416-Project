@@ -60,6 +60,18 @@ function isDetailed(fips) {
 }
 
 
+const eavsLegend = new Map([
+  ["E2a", "Provisional Ballots Cast Voter Not on List"],
+  ["E2b", "Provisional Ballots Cast Voter Lacked ID"],
+  ["E2c", "Provisional Ballots Cast Election Official Challenged Eligibility"],
+  ["E2d", "Provisional Ballots Cast Another Person Challenged Eligibility"],
+  ["E2e", "Provisional Ballots Cast Voter Not Resident"],
+  ["E2f", "Provisional Ballots Cast Voter Registration Not Updated"],
+  ["E2g", "Provisional Ballots Cast Voter Did Not Surrender Mail Ballot"],
+  ["E2h", "Provisional Ballots Cast Judge Extended Voting Hours"],
+  ["E2i", "Provisional Ballots Cast Voter Used SDR"],
+  ["other", "Other Reasons"],
+])
 
 function FitToBounds({ bounds }) {
   const map = useMap();
@@ -1191,35 +1203,31 @@ function ProvisionalBar({ data, stateId }) {
 }
 
 function ProvisionalTable({ data, stateId }) {
-  const legend = useE2LegendMap(data, stateId);
 
-  // Pull rows (fallback to MA so you always see something)
-  const raw = data?.GUI04_provisional_table?.[stateId]
-    ?? data?.GUI04_provisional_table?.["25"] ?? [];
+  const cats = data ? Object.keys(data[0].provisionalBallotCategories) : []
+  const schemaCols = ["region"].concat(cats).concat(["total"])
 
-  // Column order from schema (fallback to full default)
-  const schemaCols = data?.GUI04_provisional_table?.schema?.cols ??
-    ["region","E2a","E2b","E2c","E2d","E2e","E2f","E2g","E2h","E2i","other","total"];
+  const dgRows = data ? data
+        .map(prov => {
+          let row = { ...prov.provisionalBallotCategories }
+          row.total = Object.values(row).reduce((partial, x) => partial + x, 0);
+          row.id = row.region = prov.jurisdictionName
+          return row
+        })
+        .filter(row => row.id != null) : []
 
-  // The E2/other fields we sum
-  const CATEGORY_FIELDS = schemaCols.filter((c) => /^E2[a-i]$|^other$/.test(c));
+  const finalRow = dgRows.reduce((acc, row) => {
+    Object.keys(row).forEach(key => {
+      if (key !== 'id' && key !== 'region' && key !== 'total') {
+        acc[key] = (acc[key] || 0) + row[key];
+      }
+    });
+    acc.total = (acc.total || 0) + row.total;
+    return acc;
+  }, { id: 'Total', region: 'Total' });
 
-  // 1) Precompute total for every data row (except marker TOTAL row)
-  const bodyRows = raw.filter(r => r?.region && r.region !== "TOTAL").map((r, idx) => {
-    const total = CATEGORY_FIELDS.reduce((s, k) => s + (parseFloat(r?.[k]) || 0), 0);
-    return { id: r.id ?? r.region ?? idx, ...r, total };
-  });
+  dgRows.push(finalRow);
 
-  // 2) Compute or replace the "TOTAL" row
-  const totalsByField = Object.fromEntries(
-    CATEGORY_FIELDS.map((k) => [k, bodyRows.reduce((s, r) => s + (parseFloat(r?.[k]) || 0), 0)])
-  );
-  const grandTotal = CATEGORY_FIELDS.reduce((s, k) => s + (totalsByField[k] || 0), 0);
-  const totalRow = { id: "TOTAL", region: "TOTAL", ...totalsByField, total: grandTotal };
-
-  const dgRows = [...bodyRows, totalRow];
-
-  // 3) Build columns (short headers; long tooltip in description)
   const columns = schemaCols.map((col) => {
     if (col === "region") {
       return { field: "region", headerName: "Region", flex: 1.1, minWidth: 110 };
@@ -1231,7 +1239,7 @@ function ProvisionalTable({ data, stateId }) {
     return {
       field: col,
       headerName: col.toUpperCase(),  // compact header
-      description: legend.get(col) || (col === "other" ? "Other Reasons" : col), // full tooltip
+      description: eavsLegend.get(col) || (col === "other" ? "Other Reasons" : col), // full tooltip
       type: "number",
       flex: 0.75,
       minWidth: 90,
@@ -1254,7 +1262,7 @@ function ProvisionalTable({ data, stateId }) {
             "& .MuiDataGrid-columnHeaderTitle": { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
             "& .MuiDataGrid-virtualScroller": { overflowX: "hidden !important" },
             // bold TOTAL row
-            "& .MuiDataGrid-row:last-of-type .MuiDataGrid-cell": { fontWeight: 600 },
+            // "& .MuiDataGrid-row:last-of-type .MuiDataGrid-cell": { fontWeight: 600 },
           }}
         />
       </Paper>
@@ -1435,6 +1443,16 @@ function StateView({ stateId, stateName, initialBounds, eavsCategory, onChangeEa
     }
   }, [stateId, registeredMode, onChangeEavs]);
 
+  const [provisionals, setProvisionals] = React.useState(null);
+
+  React.useEffect(() => {
+    axios.get(`http://localhost:8080/api/eavs/provisional/${stateId}/regions`)
+      .then(res => {
+        setProvisionals(res.data)
+      })
+      .catch(e => console.error("load provisionals", e));
+  }, []);
+
   // sizes you can tweak
   const LAYOUT = {
     MAP_W: { md: 260, lg: 300 },
@@ -1590,7 +1608,7 @@ function StateView({ stateId, stateName, initialBounds, eavsCategory, onChangeEa
           ) : activeMode ? (
             <ActiveVotersTable data={data} stateId={stateId} />
           ) : (
-            <ProvisionalTable data={data} stateId={stateId} />
+            <ProvisionalTable data={provisionals} stateId={stateId} />
           )}
         </Box>
 
