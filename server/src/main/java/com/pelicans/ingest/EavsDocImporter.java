@@ -3,7 +3,11 @@ package com.pelicans.ingest;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
 import com.pelicans.model.EavsDoc;
+import com.pelicans.model.GeoStateDoc;
+import com.pelicans.model.StateDoc;
 import com.pelicans.repository.EavsRepository;
+import com.pelicans.repository.GeoStateRepository;
+import com.pelicans.repository.StateRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -18,12 +22,16 @@ import java.util.*;
 public class EavsDocImporter implements CommandLineRunner {
 
     private final EavsRepository repo;
+    private final StateRepository stateRepository;
+    private final GeoStateRepository geoStateRepository;
 
     @Value("${eavs.all.input:data_clean/eavs/eavs_2016_2024_normalized.csv}")
     private String inputPath;
 
-    public EavsDocImporter(EavsRepository repo) {
+    public EavsDocImporter(EavsRepository repo, StateRepository stateRepository, GeoStateRepository geoStateRepository) {
         this.repo = repo;
+        this.stateRepository = stateRepository;
+        this.geoStateRepository = geoStateRepository;
     }
 
     @Override
@@ -55,6 +63,10 @@ public class EavsDocImporter implements CommandLineRunner {
         int processed = 0;
         int skipped = 0;
         int errors = 0;
+        
+        // Batch processing for faster inserts
+        List<EavsDoc> batch = new ArrayList<>();
+        final int BATCH_SIZE = 500;
 
         for (int i = 1; i < rows.size(); i++) {
             String[] row = rows.get(i);
@@ -96,12 +108,32 @@ public class EavsDocImporter implements CommandLineRunner {
                     continue;
                 }
 
-                String docId = year + "|" + stateAbbr + "|" + (fips5 != null ? fips5 : fipscode.substring(0, Math.min(5, fipscode.length())));
+                // Look up stateFips from stateAbbr
+                String stateAbbrUpper = stateAbbr.toUpperCase();
+                String stateFips = null;
+                Optional<StateDoc> stateOpt = stateRepository.findByStateAbbr(stateAbbrUpper);
+                if (stateOpt.isPresent()) {
+                    stateFips = stateOpt.get().getStateFips();
+                } else {
+                    Optional<GeoStateDoc> geoStateOpt = geoStateRepository.findByStateAbbr(stateAbbrUpper);
+                    if (geoStateOpt.isPresent()) {
+                        stateFips = geoStateOpt.get().getStateFips();
+                    }
+                }
+
+                if (stateFips == null || stateFips.isEmpty()) {
+                    System.err.println("[EavsDocImporter] Warning: Could not find stateFips for " + stateAbbrUpper + ", skipping");
+                    skipped++;
+                    continue;
+                }
+
+                String fips5Value = fips5 != null ? fips5 : fipscode.substring(0, Math.min(5, fipscode.length()));
+                String docId = year + "|" + stateFips + "|" + fips5Value;
 
                 EavsDoc eavs = new EavsDoc();
                 eavs.setId(docId);
                 eavs.setYear(year);
-                eavs.setStateAbbr(stateAbbr.toUpperCase());
+                eavs.setStateFips(stateFips);
                 eavs.setJurisdictionName(jurisdictionName);
                 eavs.setFipscode(fipscode);
                 eavs.setFips5(fips5);
@@ -114,62 +146,62 @@ public class EavsDocImporter implements CommandLineRunner {
                 EavsDoc.Equipment equipment = new EavsDoc.Equipment();
                 EavsDoc.Other other = new EavsDoc.Other();
                 
-                // Registration maps
-                Map<String, Object> totalRegistered = new HashMap<>();
-                Map<String, Object> sameDayRegistration = new HashMap<>();
-                Map<String, Object> registrationMethods = new HashMap<>();
-                Map<String, Object> registrationUpdates = new HashMap<>();
-                Map<String, Object> registrationRemovals = new HashMap<>();
-                Map<String, Object> registrationCancellations = new HashMap<>();
-                Map<String, Object> registrationCorrections = new HashMap<>();
-                Map<String, Object> registrationTransfers = new HashMap<>();
-                Map<String, Object> registrationAdditions = new HashMap<>();
-                Map<String, Object> registrationChanges = new HashMap<>();
-                Map<String, Object> pollbookDeletions = new HashMap<>();
+                // Registration maps (Integer for counts)
+                Map<String, Integer> totalRegistered = new HashMap<>();
+                Map<String, Integer> sameDayRegistration = new HashMap<>();
+                Map<String, Integer> registrationMethods = new HashMap<>();
+                Map<String, Integer> registrationUpdates = new HashMap<>();
+                Map<String, Integer> registrationRemovals = new HashMap<>();
+                Map<String, Integer> registrationCancellations = new HashMap<>();
+                Map<String, Integer> registrationCorrections = new HashMap<>();
+                Map<String, Integer> registrationTransfers = new HashMap<>();
+                Map<String, Integer> registrationAdditions = new HashMap<>();
+                Map<String, Integer> registrationChanges = new HashMap<>();
+                Map<String, Integer> pollbookDeletions = new HashMap<>();
                 
-                // Voting maps
-                Map<String, Object> totalVotes = new HashMap<>();
-                Map<String, Object> electionDayVotes = new HashMap<>();
-                Map<String, Object> earlyVoting = new HashMap<>();
-                Map<String, Object> absenteeVoting = new HashMap<>();
-                Map<String, Object> earlyVotingTotals = new HashMap<>();
-                Map<String, Object> earlyVotingCategories = new HashMap<>();
-                Map<String, Object> earlyVotingInPerson = new HashMap<>();
-                Map<String, Object> earlyVotingByMail = new HashMap<>();
-                Map<String, Object> earlyVotingOther = new HashMap<>();
-                Map<String, Object> earlyVotingUocava = new HashMap<>();
-                Map<String, Object> earlyVotingDomestic = new HashMap<>();
-                Map<String, Object> earlyVotingOtherCategories = new HashMap<>();
-                Map<String, Object> earlyVotingTotals2 = new HashMap<>();
-                Map<String, Object> uocavaBallots = new HashMap<>();
-                Map<String, Object> uocavaBallotsCounted = new HashMap<>();
-                Map<String, Object> uocavaBallotsRejected = new HashMap<>();
-                Map<String, Object> uocavaBallotsOther = new HashMap<>();
-                Map<String, Object> uocavaBallotsOtherCategories = new HashMap<>();
+                // Voting maps (Integer for counts)
+                Map<String, Integer> totalVotes = new HashMap<>();
+                Map<String, Integer> electionDayVotes = new HashMap<>();
+                Map<String, Integer> earlyVoting = new HashMap<>();
+                Map<String, Integer> absenteeVoting = new HashMap<>();
+                Map<String, Integer> earlyVotingTotals = new HashMap<>();
+                Map<String, Integer> earlyVotingCategories = new HashMap<>();
+                Map<String, Integer> earlyVotingInPerson = new HashMap<>();
+                Map<String, Integer> earlyVotingByMail = new HashMap<>();
+                Map<String, Integer> earlyVotingOther = new HashMap<>();
+                Map<String, Integer> earlyVotingUocava = new HashMap<>();
+                Map<String, Integer> earlyVotingDomestic = new HashMap<>();
+                Map<String, Integer> earlyVotingOtherCategories = new HashMap<>();
+                Map<String, Integer> earlyVotingTotals2 = new HashMap<>();
+                Map<String, Integer> uocavaBallots = new HashMap<>();
+                Map<String, Integer> uocavaBallotsCounted = new HashMap<>();
+                Map<String, Integer> uocavaBallotsRejected = new HashMap<>();
+                Map<String, Integer> uocavaBallotsOther = new HashMap<>();
+                Map<String, Integer> uocavaBallotsOtherCategories = new HashMap<>();
                 
-                // Mail ballots maps
-                Map<String, Object> mailBallotsSent = new HashMap<>();
-                Map<String, Object> mailBallotApplications = new HashMap<>();
-                Map<String, Object> dropBoxReturns = new HashMap<>();
-                Map<String, Object> mailBallotsReturned = new HashMap<>();
-                Map<String, Object> mailBallotsCounted = new HashMap<>();
-                Map<String, Object> mailBallotsRejected = new HashMap<>();
+                // Mail ballots maps (Integer for counts)
+                Map<String, Integer> mailBallotsSent = new HashMap<>();
+                Map<String, Integer> mailBallotApplications = new HashMap<>();
+                Map<String, Integer> dropBoxReturns = new HashMap<>();
+                Map<String, Integer> mailBallotsReturned = new HashMap<>();
+                Map<String, Integer> mailBallotsCounted = new HashMap<>();
+                Map<String, Integer> mailBallotsRejected = new HashMap<>();
                 
-                // Provisional maps
-                Map<String, Object> provisionalBallotsCast = new HashMap<>();
-                Map<String, Object> provisionalBallotCategories = new HashMap<>();
+                // Provisional maps (Integer for counts)
+                Map<String, Integer> provisionalBallotsCast = new HashMap<>();
+                Map<String, Integer> provisionalBallotCategories = new HashMap<>();
                 
-                // Equipment maps
-                Map<String, Object> equipmentInfo = new HashMap<>();
-                Map<String, Object> equipmentDetails = new HashMap<>();
-                Map<String, Object> equipmentCounts = new HashMap<>();
-                Map<String, Object> equipmentTypes = new HashMap<>();
-                Map<String, Object> equipmentAccessibility = new HashMap<>();
-                Map<String, Object> equipmentOther = new HashMap<>();
-                Map<String, Object> equipmentDetailed = new HashMap<>();
+                // Equipment maps (Integer for counts)
+                Map<String, Integer> equipmentInfo = new HashMap<>();
+                Map<String, Integer> equipmentDetails = new HashMap<>();
+                Map<String, Integer> equipmentCounts = new HashMap<>();
+                Map<String, Integer> equipmentTypes = new HashMap<>();
+                Map<String, Integer> equipmentAccessibility = new HashMap<>();
+                Map<String, Integer> equipmentOther = new HashMap<>();
+                Map<String, Integer> equipmentDetailed = new HashMap<>();
                 
-                // Other maps
-                Map<String, Object> otherData = new HashMap<>();
+                // Other maps (Integer for counts)
+                Map<String, Integer> otherData = new HashMap<>();
                 
                 for (String header : headers) {
                     if (!header.equals("FIPSCode") && !header.equals("Year") && 
@@ -180,8 +212,9 @@ public class EavsDocImporter implements CommandLineRunner {
                         !header.equals("MISSINGNESS_SCORE") && !header.equals("EQUIPMENT_QUALITY_SCORE")) {
                         String value = getValue(row, colIndex, header);
                         if (value != null && !value.isEmpty()) {
-                            // Try to parse as number, otherwise store as string
-                            Object parsedValue = parseNumericOrString(value);
+                            // Parse as Integer for count fields, convert sentinel values to -1
+                            Integer parsedValue = parseIntegerWithSentinels(value);
+                            if (parsedValue == null) continue; // Skip only invalid data (non-numeric)
                             
                             // Organize into categories based on field prefix
                             String upperHeader = header.toUpperCase();
@@ -341,6 +374,9 @@ public class EavsDocImporter implements CommandLineRunner {
                 if (!mailBallotsRejected.isEmpty()) mailBallots.setMailBallotsRejected(mailBallotsRejected);
                 
                 // Set organized categories - Provisional
+                if (jurisdictionName != null) {
+                    provisional.setJurisdictionName(jurisdictionName);
+                }
                 if (!provisionalBallotsCast.isEmpty()) provisional.setProvisionalBallotsCast(provisionalBallotsCast);
                 if (!provisionalBallotCategories.isEmpty()) provisional.setProvisionalBallotCategories(provisionalBallotCategories);
                 
@@ -362,7 +398,6 @@ public class EavsDocImporter implements CommandLineRunner {
                 eavs.setProvisional(provisional);
                 eavs.setEquipment(equipment);
                 eavs.setOther(other);
-                // Note: questions map is not saved - only organized structure is stored
 
                 // Missingness and equipment quality scores
                 String missingnessStr = getValue(row, colIndex, "MISSINGNESS_SCORE");
@@ -374,10 +409,14 @@ public class EavsDocImporter implements CommandLineRunner {
                     eavs.setEquipmentQualityScore(parseDouble(equipmentStr));
                 }
 
-                repo.save(eavs);
+                // Add to batch instead of saving immediately
+                batch.add(eavs);
                 processed++;
 
-                if (processed % 100 == 0) {
+                // Save batch when it reaches BATCH_SIZE
+                if (batch.size() >= BATCH_SIZE) {
+                    repo.saveAll(batch);
+                    batch.clear();
                     System.out.println("[EavsDocImporter] Processed: " + processed);
                 }
 
@@ -387,6 +426,12 @@ public class EavsDocImporter implements CommandLineRunner {
                     System.err.println("[EavsDocImporter] Error processing row " + i + ": " + e.getMessage());
                 }
             }
+        }
+        
+        // Save remaining batch
+        if (!batch.isEmpty()) {
+            repo.saveAll(batch);
+            System.out.println("[EavsDocImporter] Saved final batch: " + batch.size() + " records");
         }
 
         System.out.println("[EavsDocImporter] Import complete:");
@@ -420,19 +465,24 @@ public class EavsDocImporter implements CommandLineRunner {
         }
     }
 
-    private Object parseNumericOrString(String s) {
+    /**
+     * Parse as Integer, converting EAVS sentinel values to -1:
+     * -999999: Data Not Available -> -1
+     * -888888: Not Applicable -> -1
+     * Any other negative number -> -1
+     * Returns null only for invalid data (non-numeric strings)
+     */
+    private Integer parseIntegerWithSentinels(String s) {
         if (s == null || s.isEmpty()) return null;
-        // Try integer first
         try {
-            return Integer.parseInt(s);
-        } catch (NumberFormatException e) {
-            // Try double
-            try {
-                return Double.parseDouble(s);
-            } catch (NumberFormatException e2) {
-                // Return as string
-                return s;
+            int value = Integer.parseInt(s);
+            // Convert sentinel values to -1: -999999, -888888, or any negative number
+            if (value < 0 || value == -999999 || value == -888888) {
+                return -1;
             }
+            return value;
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 }

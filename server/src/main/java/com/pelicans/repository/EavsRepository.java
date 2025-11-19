@@ -9,9 +9,9 @@ import java.util.Optional;
 
 @Repository
 public interface EavsRepository extends MongoRepository<EavsDoc, String> {
-    List<EavsDoc> findByYearAndStateAbbr(Integer year, String stateAbbr);
+    List<EavsDoc> findByYearAndStateFips(Integer year, String stateFips);
+    Optional<EavsDoc> findByYearAndStateFipsAndFips5(Integer year, String stateFips, String fips5);
     List<EavsDoc> findByYear(Integer year);
-    Optional<EavsDoc> findByYearAndStateAbbrAndFips5(Integer year, String stateAbbr, String fips5);
     List<EavsDoc> findByYearAndFips5(Integer year, String fips5);
 }
 
