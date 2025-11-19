@@ -2,6 +2,7 @@ package com.pelicans.controller;
 
 import com.pelicans.model.EavsDoc;
 import com.pelicans.repository.EavsRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,6 +25,7 @@ public class EavsController {
         this.repo = repo;
     }
 
+    @Cacheable
     @GetMapping("/provisional/{stateId}/regions")
     public List<EavsDoc.Provisional>  getProvisionalByRegion(@PathVariable String stateId) {
         List<EavsDoc> regions = repo.findByStateFips(stateId);
@@ -32,25 +34,5 @@ public class EavsController {
             .collect(Collectors.toList());
         return provisionals;
     }
-
-    // @GetMapping("/provisional/{stateId}")
-    // public Map<String, Object> getProvisionalVoters(@PathVariable String stateId) {
-    //   return eavsRepository.findByStateId(stateId).getCategories().getProvisional();
-    // }
-
-    // @GetMapping("/activevoters/{stateId}")
-    // public Map<String, Object> getActiveVoters(@PathVariable String stateId) {
-    //   return eavsRepository.findByStateId(stateId).getCategories().getActiveVoters();
-    // }
-
-    // @GetMapping("/poolbookdeletions/{stateId}")
-    // public Map<String, Object> getPollbookDeletions(@PathVariable String stateId) {
-    //   return eavsRepository.findByStateId(stateId).getCategories().getPollbookDeletions();
-    // }
-
-    // @GetMapping("/mailrejections/{stateId}")
-    // public Map<String, Object> getMailRejections(@PathVariable String stateId) {
-    //   return eavsRepository.findByStateId(stateId).getCategories().getMailRejections();
-    // }
 
 }

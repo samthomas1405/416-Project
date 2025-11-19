@@ -1,5 +1,6 @@
 package com.pelicans.controller;
 
+import org.springframework.cache.annotation.Cacheable;
 import com.pelicans.model.ProvisionalChoroplethDoc;
 import com.pelicans.repository.ProvisionalChoroplethRepository;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ public class ChoroplethController {
      * Full doc (rarely used now)
      * GET /api/choropleth/{year}/{measure}
      */
+    @Cacheable
     @GetMapping("/{year}/{measure}")
     public ResponseEntity<?> getFullDoc(
             @PathVariable int year,
@@ -39,6 +41,7 @@ public class ChoroplethController {
      * GET /api/choropleth/{year}/{measure}/state?state=25
      * Response: { "bins": <int>, "values": { "<countyFips>": <number>, ... } }
      */
+    @Cacheable
     @GetMapping("/{year}/{measure}/state")
     public ResponseEntity<?> getStateSlice(
             @PathVariable int year,
