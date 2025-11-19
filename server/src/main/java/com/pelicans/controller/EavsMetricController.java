@@ -1,6 +1,6 @@
 package com.pelicans.controller;
 
-import com.pelicans.model.EavsMetric;
+import com.pelicans.model.EavsMetricDoc;
 import com.pelicans.repository.EavsMetricRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;

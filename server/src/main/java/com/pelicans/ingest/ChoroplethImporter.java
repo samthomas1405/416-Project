@@ -7,6 +7,7 @@ import com.pelicans.model.ProvisionalChoroplethDoc;
 import com.pelicans.repository.ProvisionalChoroplethRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 // If you want to run this only under a profile, uncomment and run with -Dspring-boot.run.profiles=ingest
 // import org.springframework.context.annotation.Profile;
@@ -20,6 +21,7 @@ import java.util.Set;
 
 // @Profile("ingest")   // optional safety: enable if you want to avoid running in web profile
 @Component
+@ConditionalOnProperty(name = "eavs.choro.enabled", havingValue = "true", matchIfMissing = false)
 public class ChoroplethImporter implements CommandLineRunner {
 
     private final ProvisionalChoroplethRepository repo;
