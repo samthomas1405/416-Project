@@ -1168,12 +1168,20 @@ function ActiveVotersTable({ data, stateId }) {
 
 
 function ProvisionalBar({ data, stateId }) {
-  const rows = data?.GUI03_provisional_bar?.[stateId] ?? [];
-  const legend = useE2LegendMap(data, stateId);
+  const rows = Array.from(eavsLegend.keys())
 
-  // Your BarChart uses {label, value}; keep axis short (E2a..other),
-  // but add <title> for tooltips with long labels.
-  const chartData = rows.map(d => ({ label: d.key, value: d.value, _title: legend.get(d.key) || d.label }));
+  const totalMap = data ? data.reduce((total, obj) => {
+    if (obj.provisionalBallotCategories == null) {
+      return total
+    }
+    for (const [key, value] of Object.entries(obj.provisionalBallotCategories)) {
+      total[key] = (total[key] || 0) + value
+    }
+    return total
+  }, {}) : {}
+
+  const chartData = rows.map(d => ({ label: d, value: totalMap ? totalMap[d] : 0,
+                                     _title: eavsLegend.get(d) }));
 
   return (
     <Card title="Provisional ballots by category (E2a–E2i + Other)">
@@ -1189,7 +1197,7 @@ function ProvisionalBar({ data, stateId }) {
        {rows.map(r => (
          <span
            key={r.key}
-           title={`${legend.get(r.key) || r.label} — ${r.value}`}
+           title={`${eavsLegend.get(r.key) || r.label} — ${r.value}`}
            className="inline-flex items-center rounded-md border border-neutral-700 bg-neutral-800/60 px-1.5 py-0.5
                       text-[10px] leading-4 text-neutral-300"
          >
@@ -1589,7 +1597,7 @@ function StateView({ stateId, stateName, initialBounds, eavsCategory, onChangeEa
           ) : activeMode ? (
             <ActiveVotersBar data={data} stateId={stateId} />
           ) : (
-            <ProvisionalBar data={data} stateId={stateId} />
+            <ProvisionalBar data={provisionals} stateId={stateId} />
           )}
         </Box>
 
