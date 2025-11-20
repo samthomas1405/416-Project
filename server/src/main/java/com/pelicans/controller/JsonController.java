@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.cache.annotation.Cacheable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +35,7 @@ public class JsonController {
         this.objectMapper = objectMapper;
     }
 
+    @Cacheable
     @GetMapping("/us-states")
     public ResponseEntity<String> usStatesJson() {
         try {
@@ -84,6 +86,7 @@ public class JsonController {
         }
     }
 
+    @Cacheable
     @GetMapping("/us-counties")
     public ResponseEntity<String> usCountiesJson() {
         try {

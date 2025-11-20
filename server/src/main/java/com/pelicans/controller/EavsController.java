@@ -25,13 +25,17 @@ public class EavsController {
         this.repo = repo;
     }
 
-    @Cacheable
-    @GetMapping("/provisional/{stateId}/regions")
-    public List<EavsDoc.Provisional>  getProvisionalByRegion(@PathVariable String stateId) {
-        List<EavsDoc> regions = repo.findByStateFips(stateId);
-        List<EavsDoc.Provisional> provisionals = regions.stream()
+    private List<EavsDoc.Provisional> getProvisionalsFromDocs(List<EavsDoc> docs) {
+        return docs.stream()
             .map(EavsDoc::getProvisional)
             .collect(Collectors.toList());
+    }
+
+    @Cacheable
+    @GetMapping("/provisional/{stateFips}/regions")
+    public List<EavsDoc.Provisional>  getProvisionalByState(@PathVariable String stateFips) {
+        List<EavsDoc> docs = repo.findByStateFips(stateFips);
+        List<EavsDoc.Provisional> provisionals = getProvisionalsFromDocs(docs);
         return provisionals;
     }
 

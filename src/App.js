@@ -362,27 +362,6 @@ function useDummyData() {
 }
 
 function PanelContent({ view }) {
-  const [compare, setCompare] = useState({
-    democratic: undefined, republican: undefined
-  })
-
-  // using hardcoded democratic and republican fips
-  React.useEffect(() => {
-    axios.get("http://localhost:8080/api/state/19")
-      .then(res => setCompare((comp) => ({
-        ...comp, republican: res
-      })))
-      .catch(e => console.error("fetch republican state failed", e));
-  }, []);
-
-  React.useEffect(() => {
-    axios.get("http://localhost:8080/api/state/25")
-      .then(res => setCompare((comp) => ({
-        ...comp, democratic: res
-      })))
-      .catch(e => console.error("fetch democrat state failed", e));
-  }, []);
-
   const data = useDummyData();
   if (!view) {
     return <Typography variant="body2" color="text.secondary">Select an item from the menu.</Typography>;
@@ -399,9 +378,9 @@ function PanelContent({ view }) {
       return(
         <>
           <CompareRDBlock
-      data15={compare}
-      data22={compare}
-      data23={compare}
+      data15={data.GUI15_compare_republican_democratic}
+      data22={data.GUI22_registration_republican_democratic}
+      data23={data.GUI23_early_voting_party_domination}
     />
         </>
       )
@@ -1054,14 +1033,14 @@ function EavsPicker({ value, onChange, stateId }) {
     [stateId]
   );
 
-  const [equipment, setEquipment] = React.useState([]);
+  // const [equipment, setEquipment] = React.useState([]);
 
-  React.useEffect(() => {
-    // fetch("/us-states.json")
-    axios.get(`http://localhost:8080/api/equipment/${stateId}`)
-      .then(res => setEquipment(res.data))
-      .catch(e => console.error("load equipment", e));
-  }, []);
+  // React.useEffect(() => {
+  //   // fetch("/us-states.json")
+  //   axios.get(`http://localhost:8080/api/equipment/${stateId}`)
+  //     .then(res => setEquipment(res.data))
+  //     .catch(e => console.error("load equipment", e));
+  // }, []);
 
   return (
     <FormControl size="small" sx={{ minWidth: 240 }}>
@@ -1171,7 +1150,7 @@ function ProvisionalBar({ data, stateId }) {
   const rows = Array.from(eavsLegend.keys())
 
   const totalMap = data ? data.reduce((total, obj) => {
-    if (obj.provisionalBallotCategories == null) {
+    if (obj.jurisdictionName == null || obj.provisionalBallotCategories == null) {
       return total
     }
     for (const [key, value] of Object.entries(obj.provisionalBallotCategories)) {
@@ -1212,7 +1191,8 @@ function ProvisionalBar({ data, stateId }) {
 
 function ProvisionalTable({ data, stateId }) {
 
-  const cats = data ? Object.keys(data[0].provisionalBallotCategories) : []
+  const cats = data && data[0] && data[0].provisionalBallotCategories ?
+        Object.keys(data[0].provisionalBallotCategories).sort() : []
   const schemaCols = ["region"].concat(cats).concat(["total"])
 
   const dgRows = data ? data
