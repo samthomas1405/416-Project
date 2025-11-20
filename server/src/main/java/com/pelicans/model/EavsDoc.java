@@ -14,7 +14,7 @@ public class EavsDoc {
     @Id
     private String id;  // year|stateFips|fips5
     private Integer year;
-    private String stateFips;  // Primary identifier (2-digit FIPS code)
+    private Integer stateFips;  // Primary identifier (2-digit FIPS code)
     private String jurisdictionName;
     private String fipscode;  // Original 9-digit EAVS code
     private String fips5;     // 5-digit county FIPS
@@ -256,8 +256,8 @@ public class EavsDoc {
     public void setId(String id) { this.id = id; }
     public Integer getYear() { return year; }
     public void setYear(Integer year) { this.year = year; }
-    public String getStateFips() { return stateFips; }
-    public void setStateFips(String stateFips) { this.stateFips = stateFips; }
+    public Integer getStateFips() { return stateFips; }
+    public void setStateFips(Integer stateFips) { this.stateFips = stateFips; }
     public String getJurisdictionName() { return jurisdictionName; }
     public void setJurisdictionName(String jurisdictionName) { this.jurisdictionName = jurisdictionName; }
     public String getFipscode() { return fipscode; }

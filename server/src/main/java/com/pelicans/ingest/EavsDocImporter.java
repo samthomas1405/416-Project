@@ -42,6 +42,27 @@ public class EavsDocImporter implements CommandLineRunner {
             return;
         }
 
+        // Pre-load state mappings into memory for fast lookups
+        System.out.println("[EavsDocImporter] Pre-loading state mappings...");
+        Map<String, Integer> stateFipsCache = new HashMap<>();
+        stateRepository.findAll().forEach(state -> {
+            try {
+                Integer fips = Integer.parseInt(state.getStateFips());
+                stateFipsCache.put(state.getStateAbbr().toUpperCase(), fips);
+            } catch (NumberFormatException e) {
+                // Skip invalid FIPS
+            }
+        });
+        geoStateRepository.findAll().forEach(state -> {
+            try {
+                Integer fips = Integer.parseInt(state.getStateFips());
+                stateFipsCache.put(state.getStateAbbr().toUpperCase(), fips);
+            } catch (NumberFormatException e) {
+                // Skip invalid FIPS
+            }
+        });
+        System.out.println("[EavsDocImporter] Loaded " + stateFipsCache.size() + " state mappings");
+
         System.out.println("[EavsDocImporter] Reading CSV: " + f.getAbsolutePath());
 
         List<String[]> rows;
@@ -60,13 +81,43 @@ public class EavsDocImporter implements CommandLineRunner {
             colIndex.put(headers[i].trim(), i);
         }
 
+        // Pre-filter and pre-categorize relevant column indices for faster processing
+        // Map: column index -> target map type (1=totalRegistered, 2=sameDayRegistration, etc.)
+        Map<Integer, Integer> colToMapType = new HashMap<>();
+        Set<String> excludedHeaders = Set.of("FIPSCode", "Year", "year", "State", "state_abbr", "State_Abbr",
+            "JurisdictionName", "Jurisdiction_Name", "jurisdiction_name", "fips5", "FIPS_2Digit",
+            "MISSINGNESS_SCORE", "EQUIPMENT_QUALITY_SCORE", "A1a", "A1b", "A1c");
+        
+        // Pre-compute header upper case versions and categorize them
+        String[] upperHeaders = new String[headers.length];
+        for (int i = 0; i < headers.length; i++) {
+            upperHeaders[i] = headers[i].trim().toUpperCase();
+        }
+        
+        for (int i = 0; i < headers.length; i++) {
+            String header = headers[i].trim();
+            if (excludedHeaders.contains(header)) continue;
+            
+            String upperHeader = upperHeaders[i];
+            if (upperHeader.length() == 0) continue;
+            char prefix = upperHeader.charAt(0);
+            
+            if (prefix == 'A' || prefix == 'B' || prefix == 'C' || prefix == 'D' || prefix == 'E' || prefix == 'F') {
+                // Categorize field type: 1-20 for different map types
+                int mapType = categorizeField(upperHeader, prefix);
+                if (mapType > 0) {
+                    colToMapType.put(i, mapType);
+                }
+            }
+        }
+
         int processed = 0;
         int skipped = 0;
         int errors = 0;
         
-        // Batch processing for faster inserts
+        // Batch processing for faster inserts - increased batch size for better performance
         List<EavsDoc> batch = new ArrayList<>();
-        final int BATCH_SIZE = 500;
+        final int BATCH_SIZE = 1000;
 
         for (int i = 1; i < rows.size(); i++) {
             String[] row = rows.get(i);
@@ -88,7 +139,14 @@ public class EavsDocImporter implements CommandLineRunner {
                 if (stateAbbr == null) {
                     stateAbbr = getValue(row, colIndex, "State");  // Fallback to State column
                 }
+                // Check multiple field name variations for jurisdiction name
                 String jurisdictionName = getValue(row, colIndex, "JurisdictionName");
+                if (jurisdictionName == null || jurisdictionName.isEmpty()) {
+                    jurisdictionName = getValue(row, colIndex, "Jurisdiction_Name");
+                }
+                if (jurisdictionName == null || jurisdictionName.isEmpty()) {
+                    jurisdictionName = getValue(row, colIndex, "jurisdiction_name");
+                }
                 String fips5 = getValue(row, colIndex, "fips5");
 
                 if (fipscode == null || yearStr == null || stateAbbr == null) {
@@ -108,20 +166,11 @@ public class EavsDocImporter implements CommandLineRunner {
                     continue;
                 }
 
-                // Look up stateFips from stateAbbr
+                // Look up stateFips from cache (much faster than database queries)
                 String stateAbbrUpper = stateAbbr.toUpperCase();
-                String stateFips = null;
-                Optional<StateDoc> stateOpt = stateRepository.findByStateAbbr(stateAbbrUpper);
-                if (stateOpt.isPresent()) {
-                    stateFips = stateOpt.get().getStateFips();
-                } else {
-                    Optional<GeoStateDoc> geoStateOpt = geoStateRepository.findByStateAbbr(stateAbbrUpper);
-                    if (geoStateOpt.isPresent()) {
-                        stateFips = geoStateOpt.get().getStateFips();
-                    }
-                }
-
-                if (stateFips == null || stateFips.isEmpty()) {
+                Integer stateFips = stateFipsCache.get(stateAbbrUpper);
+                
+                if (stateFips == null) {
                     System.err.println("[EavsDocImporter] Warning: Could not find stateFips for " + stateAbbrUpper + ", skipping");
                     skipped++;
                     continue;
@@ -203,132 +252,82 @@ public class EavsDocImporter implements CommandLineRunner {
                 // Other maps (Integer for counts)
                 Map<String, Integer> otherData = new HashMap<>();
                 
-                for (String header : headers) {
-                    if (!header.equals("FIPSCode") && !header.equals("Year") && 
-                        !header.equals("year") && !header.equals("State") && 
-                        !header.equals("state_abbr") && !header.equals("State_Abbr") &&
-                        !header.equals("JurisdictionName") && !header.equals("jurisdiction_name") &&
-                        !header.equals("fips5") && !header.equals("FIPS_2Digit") &&
-                        !header.equals("MISSINGNESS_SCORE") && !header.equals("EQUIPMENT_QUALITY_SCORE")) {
-                        String value = getValue(row, colIndex, header);
-                        if (value != null && !value.isEmpty()) {
-                            // Parse as Integer for count fields, convert sentinel values to -1
-                            Integer parsedValue = parseIntegerWithSentinels(value);
-                            if (parsedValue == null) continue; // Skip only invalid data (non-numeric)
-                            
-                            // Organize into categories based on field prefix
-                            String upperHeader = header.toUpperCase();
-                            char prefix = upperHeader.length() > 0 ? upperHeader.charAt(0) : 'X';
-                            String numPart = upperHeader.length() > 1 ? upperHeader.substring(1).replaceAll("[^0-9]", "") : "";
-                            
-                            if (prefix == 'A') {
-                                // Registration fields
-                                if (upperHeader.startsWith("A1") && !upperHeader.startsWith("A10") && !upperHeader.startsWith("A11") && !upperHeader.startsWith("A12")) {
-                                    totalRegistered.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("A12")) {
-                                    pollbookDeletions.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("A3")) {
-                                    sameDayRegistration.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("A4")) {
-                                    registrationMethods.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("A5")) {
-                                    registrationUpdates.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("A6")) {
-                                    registrationRemovals.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("A7")) {
-                                    registrationCancellations.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("A8")) {
-                                    registrationCorrections.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("A9")) {
-                                    registrationTransfers.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("A10")) {
-                                    registrationAdditions.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("A11")) {
-                                    registrationChanges.put(header, parsedValue);
-                                }
-                            } else if (prefix == 'B') {
-                                // Voting fields
-                                if (upperHeader.startsWith("B1")) {
-                                    totalVotes.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("B2")) {
-                                    electionDayVotes.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("B3")) {
-                                    earlyVoting.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("B4")) {
-                                    absenteeVoting.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("B5")) {
-                                    earlyVotingTotals.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("B6")) {
-                                    earlyVotingCategories.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("B7")) {
-                                    earlyVotingInPerson.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("B8")) {
-                                    earlyVotingByMail.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("B9")) {
-                                    earlyVotingOther.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("B10")) {
-                                    earlyVotingUocava.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("B11")) {
-                                    earlyVotingDomestic.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("B12")) {
-                                    earlyVotingOtherCategories.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("B13")) {
-                                    earlyVotingTotals2.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("B14") || upperHeader.startsWith("B24")) {
-                                    uocavaBallots.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("B15")) {
-                                    uocavaBallotsCounted.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("B16")) {
-                                    uocavaBallotsRejected.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("B17")) {
-                                    uocavaBallotsOther.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("B18")) {
-                                    uocavaBallotsOtherCategories.put(header, parsedValue);
-                                }
-                            } else if (prefix == 'C') {
-                                // Mail ballots
-                                if (upperHeader.startsWith("C1")) {
-                                    mailBallotsSent.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("C2")) {
-                                    mailBallotApplications.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("C3")) {
-                                    dropBoxReturns.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("C4")) {
-                                    mailBallotsReturned.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("C5")) {
-                                    mailBallotsCounted.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("C9")) {
-                                    mailBallotsRejected.put(header, parsedValue);
-                                }
-                            } else if (prefix == 'E') {
-                                // Provisional
-                                if (upperHeader.startsWith("E1")) {
-                                    provisionalBallotsCast.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("E2")) {
-                                    provisionalBallotCategories.put(header, parsedValue);
-                                }
-                            } else if (prefix == 'F') {
-                                // Equipment
-                                if (upperHeader.startsWith("F1")) {
-                                    equipmentInfo.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("F2")) {
-                                    equipmentDetails.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("F3")) {
-                                    equipmentCounts.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("F4")) {
-                                    equipmentTypes.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("F5")) {
-                                    equipmentAccessibility.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("F6")) {
-                                    equipmentOther.put(header, parsedValue);
-                                } else if (upperHeader.startsWith("F7")) {
-                                    equipmentDetailed.put(header, parsedValue);
-                                }
-                            } else if (prefix == 'D') {
-                                // Other
-                                otherData.put(header, parsedValue);
-                            }
-                        }
+                // Always ensure A1a, A1b, A1c are present in totalRegistered (use -1 if empty)
+                String a1aValue = getValue(row, colIndex, "A1a");
+                String a1bValue = getValue(row, colIndex, "A1b");
+                String a1cValue = getValue(row, colIndex, "A1c");
+                
+                totalRegistered.put("A1a", parseIntegerWithSentinels(a1aValue));
+                totalRegistered.put("A1b", parseIntegerWithSentinels(a1bValue));
+                totalRegistered.put("A1c", parseIntegerWithSentinels(a1cValue));
+                
+                // Process only relevant columns using pre-categorized map types for better performance
+                for (Map.Entry<Integer, Integer> entry : colToMapType.entrySet()) {
+                    int colIdx = entry.getKey();
+                    if (colIdx >= row.length) continue;
+                    int mapType = entry.getValue();
+                    String value = row[colIdx];
+                    if (value == null) continue;
+                    
+                    // Fast trim check - only trim if needed
+                    int len = value.length();
+                    int start = 0;
+                    while (start < len && value.charAt(start) <= ' ') start++;
+                    if (start == len) continue; // Empty after trimming
+                    
+                    // Parse value (trim inline if needed)
+                    String trimmedValue = (start > 0 || len > 0 && value.charAt(len-1) > ' ') ? value.trim() : value;
+                    Integer parsedValue = parseIntegerWithSentinels(trimmedValue);
+                    
+                    String header = headers[colIdx].trim();
+                    
+                    // Direct map assignment based on pre-computed type
+                    switch (mapType) {
+                        case 1: totalRegistered.put(header, parsedValue); break;
+                        case 2: sameDayRegistration.put(header, parsedValue); break;
+                        case 3: registrationMethods.put(header, parsedValue); break;
+                        case 4: registrationUpdates.put(header, parsedValue); break;
+                        case 5: registrationRemovals.put(header, parsedValue); break;
+                        case 6: registrationCancellations.put(header, parsedValue); break;
+                        case 7: registrationCorrections.put(header, parsedValue); break;
+                        case 8: registrationTransfers.put(header, parsedValue); break;
+                        case 9: registrationAdditions.put(header, parsedValue); break;
+                        case 10: registrationChanges.put(header, parsedValue); break;
+                        case 11: pollbookDeletions.put(header, parsedValue); break;
+                        case 12: totalVotes.put(header, parsedValue); break;
+                        case 13: electionDayVotes.put(header, parsedValue); break;
+                        case 14: earlyVoting.put(header, parsedValue); break;
+                        case 15: absenteeVoting.put(header, parsedValue); break;
+                        case 16: earlyVotingTotals.put(header, parsedValue); break;
+                        case 17: earlyVotingCategories.put(header, parsedValue); break;
+                        case 18: earlyVotingInPerson.put(header, parsedValue); break;
+                        case 19: earlyVotingByMail.put(header, parsedValue); break;
+                        case 20: earlyVotingOther.put(header, parsedValue); break;
+                        case 21: earlyVotingUocava.put(header, parsedValue); break;
+                        case 22: earlyVotingDomestic.put(header, parsedValue); break;
+                        case 23: earlyVotingOtherCategories.put(header, parsedValue); break;
+                        case 24: earlyVotingTotals2.put(header, parsedValue); break;
+                        case 25: uocavaBallots.put(header, parsedValue); break;
+                        case 26: uocavaBallotsCounted.put(header, parsedValue); break;
+                        case 27: uocavaBallotsRejected.put(header, parsedValue); break;
+                        case 28: uocavaBallotsOther.put(header, parsedValue); break;
+                        case 29: uocavaBallotsOtherCategories.put(header, parsedValue); break;
+                        case 30: mailBallotsSent.put(header, parsedValue); break;
+                        case 31: mailBallotApplications.put(header, parsedValue); break;
+                        case 32: dropBoxReturns.put(header, parsedValue); break;
+                        case 33: mailBallotsReturned.put(header, parsedValue); break;
+                        case 34: mailBallotsCounted.put(header, parsedValue); break;
+                        case 35: mailBallotsRejected.put(header, parsedValue); break;
+                        case 36: provisionalBallotsCast.put(header, parsedValue); break;
+                        case 37: provisionalBallotCategories.put(header, parsedValue); break;
+                        case 38: equipmentInfo.put(header, parsedValue); break;
+                        case 39: equipmentDetails.put(header, parsedValue); break;
+                        case 40: equipmentCounts.put(header, parsedValue); break;
+                        case 41: equipmentTypes.put(header, parsedValue); break;
+                        case 42: equipmentAccessibility.put(header, parsedValue); break;
+                        case 43: equipmentOther.put(header, parsedValue); break;
+                        case 44: equipmentDetailed.put(header, parsedValue); break;
+                        case 45: otherData.put(header, parsedValue); break;
                     }
                 }
                 
@@ -374,9 +373,8 @@ public class EavsDocImporter implements CommandLineRunner {
                 if (!mailBallotsRejected.isEmpty()) mailBallots.setMailBallotsRejected(mailBallotsRejected);
                 
                 // Set organized categories - Provisional
-                if (jurisdictionName != null) {
-                    provisional.setJurisdictionName(jurisdictionName);
-                }
+                // Always set jurisdictionName (even if empty/null, it will be stored)
+                provisional.setJurisdictionName(jurisdictionName != null ? jurisdictionName : "");
                 if (!provisionalBallotsCast.isEmpty()) provisional.setProvisionalBallotsCast(provisionalBallotsCast);
                 if (!provisionalBallotCategories.isEmpty()) provisional.setProvisionalBallotCategories(provisionalBallotCategories);
                 
@@ -470,20 +468,112 @@ public class EavsDocImporter implements CommandLineRunner {
      * -999999: Data Not Available -> -1
      * -888888: Not Applicable -> -1
      * Any other negative number -> -1
-     * Returns null only for invalid data (non-numeric strings)
+     * Text values like "Does not apply" or "-888888: Not Applicable" -> -1
+     * Never returns null - always returns -1 for invalid/missing data
      */
     private Integer parseIntegerWithSentinels(String s) {
-        if (s == null || s.isEmpty()) return null;
+        if (s == null || s.isEmpty()) return -1;
+        
+        // Handle text values that indicate missing/not applicable data
+        String trimmed = s.trim();
+        if (trimmed.equalsIgnoreCase("does not apply") || 
+            trimmed.equalsIgnoreCase("not applicable") ||
+            trimmed.equalsIgnoreCase("n/a") ||
+            trimmed.equalsIgnoreCase("na")) {
+            return -1;
+        }
+        
+        // Extract numeric part if there's text after a number (e.g., "-888888: Not Applicable")
+        String numericPart = trimmed;
+        int colonIndex = trimmed.indexOf(':');
+        if (colonIndex > 0) {
+            numericPart = trimmed.substring(0, colonIndex).trim();
+        }
+        
+        // Try to extract leading number using regex
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("^-?\\d+");
+        java.util.regex.Matcher matcher = pattern.matcher(numericPart);
+        if (matcher.find()) {
+            numericPart = matcher.group();
+        } else {
+            // No numeric part found, return -1
+            return -1;
+        }
+        
         try {
-            int value = Integer.parseInt(s);
+            int value = Integer.parseInt(numericPart);
             // Convert sentinel values to -1: -999999, -888888, or any negative number
             if (value < 0 || value == -999999 || value == -888888) {
                 return -1;
             }
             return value;
         } catch (NumberFormatException e) {
-            return null;
+            // If it's not a number at all, return -1 for "not available" text values
+            return -1;
         }
+    }
+    
+    /**
+     * Pre-categorize field into map type for faster processing.
+     * Returns map type code (1-45) or 0 if not relevant.
+     */
+    private int categorizeField(String upperHeader, char prefix) {
+        if (prefix == 'A') {
+            if (upperHeader.startsWith("A1") && !upperHeader.startsWith("A10") && !upperHeader.startsWith("A11") && !upperHeader.startsWith("A12")) {
+                if (!upperHeader.equals("A1A") && !upperHeader.equals("A1B") && !upperHeader.equals("A1C")) {
+                    return 1; // totalRegistered
+                }
+            } else if (upperHeader.startsWith("A12")) return 11; // pollbookDeletions
+            else if (upperHeader.startsWith("A3")) return 2; // sameDayRegistration
+            else if (upperHeader.startsWith("A4")) return 3; // registrationMethods
+            else if (upperHeader.startsWith("A5")) return 4; // registrationUpdates
+            else if (upperHeader.startsWith("A6")) return 5; // registrationRemovals
+            else if (upperHeader.startsWith("A7")) return 6; // registrationCancellations
+            else if (upperHeader.startsWith("A8")) return 7; // registrationCorrections
+            else if (upperHeader.startsWith("A9")) return 8; // registrationTransfers
+            else if (upperHeader.startsWith("A10")) return 9; // registrationAdditions
+            else if (upperHeader.startsWith("A11")) return 10; // registrationChanges
+        } else if (prefix == 'B') {
+            if (upperHeader.startsWith("B1")) return 12; // totalVotes
+            else if (upperHeader.startsWith("B2")) return 13; // electionDayVotes
+            else if (upperHeader.startsWith("B3")) return 14; // earlyVoting
+            else if (upperHeader.startsWith("B4")) return 15; // absenteeVoting
+            else if (upperHeader.startsWith("B5")) return 16; // earlyVotingTotals
+            else if (upperHeader.startsWith("B6")) return 17; // earlyVotingCategories
+            else if (upperHeader.startsWith("B7")) return 18; // earlyVotingInPerson
+            else if (upperHeader.startsWith("B8")) return 19; // earlyVotingByMail
+            else if (upperHeader.startsWith("B9")) return 20; // earlyVotingOther
+            else if (upperHeader.startsWith("B10")) return 21; // earlyVotingUocava
+            else if (upperHeader.startsWith("B11")) return 22; // earlyVotingDomestic
+            else if (upperHeader.startsWith("B12")) return 23; // earlyVotingOtherCategories
+            else if (upperHeader.startsWith("B13")) return 24; // earlyVotingTotals2
+            else if (upperHeader.startsWith("B14") || upperHeader.startsWith("B24")) return 25; // uocavaBallots
+            else if (upperHeader.startsWith("B15")) return 26; // uocavaBallotsCounted
+            else if (upperHeader.startsWith("B16")) return 27; // uocavaBallotsRejected
+            else if (upperHeader.startsWith("B17")) return 28; // uocavaBallotsOther
+            else if (upperHeader.startsWith("B18")) return 29; // uocavaBallotsOtherCategories
+        } else if (prefix == 'C') {
+            if (upperHeader.startsWith("C1")) return 30; // mailBallotsSent
+            else if (upperHeader.startsWith("C2")) return 31; // mailBallotApplications
+            else if (upperHeader.startsWith("C3")) return 32; // dropBoxReturns
+            else if (upperHeader.startsWith("C4")) return 33; // mailBallotsReturned
+            else if (upperHeader.startsWith("C5")) return 34; // mailBallotsCounted
+            else if (upperHeader.startsWith("C9")) return 35; // mailBallotsRejected
+        } else if (prefix == 'E') {
+            if (upperHeader.startsWith("E1")) return 36; // provisionalBallotsCast
+            else if (upperHeader.startsWith("E2")) return 37; // provisionalBallotCategories
+        } else if (prefix == 'F') {
+            if (upperHeader.startsWith("F1")) return 38; // equipmentInfo
+            else if (upperHeader.startsWith("F2")) return 39; // equipmentDetails
+            else if (upperHeader.startsWith("F3")) return 40; // equipmentCounts
+            else if (upperHeader.startsWith("F4")) return 41; // equipmentTypes
+            else if (upperHeader.startsWith("F5")) return 42; // equipmentAccessibility
+            else if (upperHeader.startsWith("F6")) return 43; // equipmentOther
+            else if (upperHeader.startsWith("F7")) return 44; // equipmentDetailed
+        } else if (prefix == 'D') {
+            return 45; // otherData
+        }
+        return 0; // Not relevant
     }
 }
 

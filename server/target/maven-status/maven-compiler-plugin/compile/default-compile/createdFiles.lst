@@ -2,7 +2,6 @@ com/pelicans/model/EquipmentJurisdictionDoc.class
 com/pelicans/model/WaDemographicsPrecinctDoc.class
 com/pelicans/repository/WaParticipationAgeRepository.class
 com/pelicans/repository/WaVoterRepository.class
-com/pelicans/controller/EavsMetricController.class
 com/pelicans/model/WaDemographicsCountyDoc.class
 com/pelicans/App.class
 com/pelicans/ingest/PresResults2024CountyImporter.class
@@ -18,7 +17,6 @@ com/pelicans/repository/GeoStateRepository.class
 com/pelicans/ingest/CsvImporterBase.class
 com/pelicans/repository/GeoWaPrecinctRepository.class
 com/pelicans/ingest/CvapCounty2023LongImporter.class
-com/pelicans/controller/StateController.class
 com/pelicans/ingest/EquipmentJurisdiction2022Importer.class
 com/pelicans/ingest/ChoroplethImporter.class
 com/pelicans/model/WaVoterHistoryDoc.class
@@ -27,6 +25,7 @@ com/pelicans/model/EavsMetricDoc.class
 com/pelicans/model/PresResultsCountyDoc.class
 com/pelicans/model/WaRegistrationAgeDoc.class
 com/pelicans/model/EavsMetricDoc$Tot.class
+com/pelicans/controller/EavsController.class
 com/pelicans/model/WaVoterDoc.class
 com/pelicans/controller/ChoroplethController.class
 com/pelicans/repository/EavsMetricRepository.class
@@ -36,7 +35,6 @@ com/pelicans/ingest/WaRegistrationCountyGenderImporter.class
 com/pelicans/repository/StateRepository.class
 com/pelicans/repository/ProvisionalChoroplethRepository.class
 com/pelicans/repository/PresResultsCountyRepository.class
-com/pelicans/model/ProvisionalChoroplethDoc$StateValues.class
 com/pelicans/repository/CvapCountyRepository.class
 com/pelicans/ingest/GeoCountiesImporter.class
 com/pelicans/repository/PresResultsMaTownRepository.class

@@ -34,9 +34,14 @@ public class EavsController {
     @Cacheable
     @GetMapping("/provisional/{stateFips}/regions")
     public List<EavsDoc.Provisional>  getProvisionalByState(@PathVariable String stateFips) {
-        List<EavsDoc> docs = repo.findByStateFips(stateFips);
-        List<EavsDoc.Provisional> provisionals = getProvisionalsFromDocs(docs);
-        return provisionals;
+        try {
+            Integer stateFipsInt = Integer.parseInt(stateFips);
+            List<EavsDoc> docs = repo.findByStateFips(stateFipsInt);
+            List<EavsDoc.Provisional> provisionals = getProvisionalsFromDocs(docs);
+            return provisionals;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid stateFips: " + stateFips + " (must be an integer)");
+        }
     }
 
 }

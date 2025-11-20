@@ -1,8 +1,7 @@
 /Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/App.java
 /Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/controller/ChoroplethController.java
-/Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/controller/EavsMetricController.java
+/Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/controller/EavsController.java
 /Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/controller/JsonController.java
-/Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/controller/StateController.java
 /Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/ingest/ChoroplethImporter.java
 /Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/ingest/CsvImporterBase.java
 /Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/ingest/CvapCounty2023LongImporter.java
