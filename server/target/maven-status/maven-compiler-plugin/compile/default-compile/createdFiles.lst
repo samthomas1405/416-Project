@@ -17,6 +17,7 @@ com/pelicans/repository/GeoStateRepository.class
 com/pelicans/ingest/CsvImporterBase.class
 com/pelicans/repository/GeoWaPrecinctRepository.class
 com/pelicans/ingest/CvapCounty2023LongImporter.class
+com/pelicans/model/GeoJsonCollectionDoc.class
 com/pelicans/ingest/EquipmentJurisdiction2022Importer.class
 com/pelicans/ingest/ChoroplethImporter.class
 com/pelicans/model/WaVoterHistoryDoc.class
@@ -35,6 +36,7 @@ com/pelicans/ingest/WaRegistrationCountyGenderImporter.class
 com/pelicans/repository/StateRepository.class
 com/pelicans/repository/ProvisionalChoroplethRepository.class
 com/pelicans/repository/PresResultsCountyRepository.class
+com/pelicans/model/ProvisionalChoroplethDoc$StateValues.class
 com/pelicans/repository/CvapCountyRepository.class
 com/pelicans/ingest/GeoCountiesImporter.class
 com/pelicans/repository/PresResultsMaTownRepository.class
@@ -64,6 +66,7 @@ com/pelicans/model/PresResultsMaTownDoc.class
 com/pelicans/ingest/WaVoterImporter.class
 com/pelicans/model/EavsDoc$Equipment.class
 com/pelicans/repository/EquipmentDeviceRepository.class
+com/pelicans/repository/GeoJsonCollectionRepository.class
 com/pelicans/ingest/FelonyPolicy2024Importer.class
 com/pelicans/model/EavsDoc$MailBallots.class
 com/pelicans/model/EavsDoc$Provisional.class

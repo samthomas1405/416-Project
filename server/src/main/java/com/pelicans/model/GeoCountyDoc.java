@@ -99,4 +99,3 @@ public class GeoCountyDoc {
         this.updatedAt = updatedAt;
     }
 }
-

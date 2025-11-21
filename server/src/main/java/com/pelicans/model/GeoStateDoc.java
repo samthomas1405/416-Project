@@ -97,4 +97,3 @@ public class GeoStateDoc {
         this.updatedAt = updatedAt;
     }
 }
-

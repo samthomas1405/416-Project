@@ -115,4 +115,3 @@ public class GeoCountiesImporter implements CommandLineRunner {
         return Document.parse(geomNode.toString());
     }
 }
-

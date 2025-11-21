@@ -119,4 +119,3 @@ public class GeoWaPrecinctsImporter implements CommandLineRunner {
         return Document.parse(geomNode.toString());
     }
 }
-

@@ -117,4 +117,3 @@ public class GeoStatesImporter implements CommandLineRunner {
         return Document.parse(geomNode.toString());
     }
 }
-

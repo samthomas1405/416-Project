@@ -29,6 +29,7 @@
 /Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/model/EquipmentJurisdictionDoc.java
 /Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/model/FelonyPolicyDoc.java
 /Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/model/GeoCountyDoc.java
+/Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/model/GeoJsonCollectionDoc.java
 /Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/model/GeoStateDoc.java
 /Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/model/GeoWaPrecinctDoc.java
 /Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/model/PresResultsCountyDoc.java
@@ -49,6 +50,7 @@
 /Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/repository/EquipmentJurisdictionRepository.java
 /Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/repository/FelonyPolicyRepository.java
 /Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/repository/GeoCountyRepository.java
+/Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/repository/GeoJsonCollectionRepository.java
 /Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/repository/GeoStateRepository.java
 /Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/repository/GeoWaPrecinctRepository.java
 /Users/samuelthomas/projects/416/416-Project/server/src/main/java/com/pelicans/repository/PresResultsCountyRepository.java

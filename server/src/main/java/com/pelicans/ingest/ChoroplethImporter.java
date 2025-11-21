@@ -5,13 +5,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pelicans.model.ProvisionalChoroplethDoc;
 import com.pelicans.repository.ProvisionalChoroplethRepository;
-import org.bson.Document;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
+import java.util.*;
 import java.util.regex.Pattern;
 
 @Component
@@ -24,11 +24,18 @@ public class ChoroplethImporter implements CommandLineRunner {
     @Value("${eavs.choro.input:/Users/samuelthomas/Downloads/data_clean/results_2024}")
     private String inputPath;
 
+    // Valid state FIPS codes (2-digit)
+    private static final Set<String> VALID_STATES = new HashSet<>(Arrays.asList(
+        "01", "02", "04", "05", "06", "08", "09", "10", "11", "12", "13", "15", "16", "17", "18", "19",
+        "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35",
+        "36", "37", "38", "39", "40", "41", "42", "44", "45", "46", "47", "48", "49", "50", "51", "53",
+        "54", "55", "56"
+    ));
+
     public ChoroplethImporter(ProvisionalChoroplethRepository repo, ObjectMapper mapper) {
         this.repo = repo;
         this.mapper = mapper;
     }
-
 
     @Override
     public void run(String... args) throws Exception {
@@ -71,93 +78,96 @@ public class ChoroplethImporter implements CommandLineRunner {
     }
 
     private void processChoroplethFile(File f) throws Exception {
-        // Read the entire JSON file
         JsonNode root = mapper.readTree(f);
 
-        // Extract metadata for indexing/querying
+        // Extract metadata
         String valueCol = text(root, "value_col", "E1A");
         int year = extractYear(root);
         String measure = valueCol;
-        
-        // Convert JsonNode to MongoDB Document (stores raw JSON)
-        Document rawDataDoc = jsonNodeToDocument(root);
 
-        // Create document with raw JSON
+        // Extract bins
+        List<Double> bins = new ArrayList<>();
+        JsonNode binsNode = root.path("bins");
+        if (binsNode.isArray()) {
+            for (JsonNode bin : binsNode) {
+                if (bin.isNumber()) {
+                    bins.add(bin.asDouble());
+                }
+            }
+        }
+
+        // Extract data and organize by state
+        Map<String, ProvisionalChoroplethDoc.StateValues> statesMap = new HashMap<>();
+        JsonNode data = root.path("data");
+        String regionCol = text(root, "region_col", "FIPSCODE");
+
+        if (data.isArray()) {
+            for (JsonNode row : data) {
+                JsonNode regionNode = row.path(regionCol);
+                if (regionNode.isMissingNode() || regionNode.isNull()) continue;
+
+                String countyRaw = regionNode.asText().trim();
+                String countyFips = normalizeCountyFips(countyRaw);
+                if (countyFips == null || countyFips.length() != 5) continue;
+
+                // Extract state FIPS (first 2 digits)
+                String stateFips = countyFips.substring(0, 2);
+                if (!VALID_STATES.contains(stateFips)) continue;
+
+                // Skip state-level aggregations (ending in 000)
+                if (countyFips.endsWith("000")) continue;
+
+                // Get the value
+                JsonNode valueNode = row.path(valueCol);
+                if (!valueNode.isNumber()) continue;
+                double value = valueNode.asDouble();
+
+                // Add to state map
+                statesMap.computeIfAbsent(stateFips, k -> {
+                    ProvisionalChoroplethDoc.StateValues sv = new ProvisionalChoroplethDoc.StateValues();
+                    sv.setValues(new HashMap<>());
+                    return sv;
+                }).getValues().put(countyFips, value);
+            }
+        }
+
+        // Create and save document
         ProvisionalChoroplethDoc doc = new ProvisionalChoroplethDoc();
         doc.setId(year + "|" + measure);
         doc.setYear(year);
         doc.setMeasure(measure);
-        doc.setRawData(rawDataDoc);
+        doc.setBins(bins);
+        doc.setStates(statesMap);
 
-        // Save (upsert by id)
         repo.save(doc);
-
-        // Get some stats for logging
-        JsonNode data = root.path("data");
-        int dataRows = data.isArray() ? data.size() : 0;
-        JsonNode bins = root.path("bins");
-        int binsCount = bins.isArray() ? bins.size() : 0;
 
         System.out.println("[ChoroplethImporter] Saved choropleth: year=" + year
                 + ", measure=" + measure
-                + ", bins=" + binsCount
-                + ", data_rows=" + dataRows
+                + ", bins=" + bins.size()
+                + ", states=" + statesMap.size()
                 + ", file=" + f.getName());
     }
 
     /**
-     * Converts a Jackson JsonNode to a MongoDB Document recursively.
-     * This preserves the entire JSON structure as-is.
+     * Normalize raw county FIPS to a strict 5-digit code.
      */
-    private Document jsonNodeToDocument(JsonNode node) {
-        Document doc = new Document();
-        
-        if (node.isObject()) {
-            node.fields().forEachRemaining(entry -> {
-                String key = entry.getKey();
-                JsonNode value = entry.getValue();
-                doc.append(key, jsonNodeValueToObject(value));
-            });
-        } else if (node.isArray()) {
-            // This shouldn't happen at root level, but handle it
-            return new Document("_array", jsonNodeValueToObject(node));
-        }
-        
-        return doc;
-    }
+    private static String normalizeCountyFips(String raw) {
+        if (raw == null) return null;
+        // Remove all non-digits
+        String s = raw.trim().replaceAll("\\D", "");
+        if (s.isEmpty()) return null;
 
-    /**
-     * Converts a JsonNode value to a Java object that MongoDB can store.
-     */
-    private Object jsonNodeValueToObject(JsonNode node) {
-        if (node.isNull()) {
-            return null;
-        } else if (node.isBoolean()) {
-            return node.asBoolean();
-        } else if (node.isInt()) {
-            return node.asInt();
-        } else if (node.isLong()) {
-            return node.asLong();
-        } else if (node.isDouble() || node.isFloat()) {
-            return node.asDouble();
-        } else if (node.isTextual()) {
-            return node.asText();
-        } else if (node.isArray()) {
-            return node.elements().hasNext() 
-                ? java.util.stream.StreamSupport.stream(node.spliterator(), false)
-                    .map(this::jsonNodeValueToObject)
-                    .collect(java.util.stream.Collectors.toList())
-                : new java.util.ArrayList<>();
-        } else if (node.isObject()) {
-            Document subDoc = new Document();
-            node.fields().forEachRemaining(entry -> {
-                subDoc.append(entry.getKey(), jsonNodeValueToObject(entry.getValue()));
-            });
-            return subDoc;
-        } else {
-            // Fallback: convert to string
-            return node.asText();
+        // Left pad to 5
+        if (s.length() < 5) {
+            s = String.format("%5s", s).replace(' ', '0');
         }
+
+        // Truncate to 5 if longer
+        if (s.length() > 5) {
+            s = s.substring(0, 5);
+        }
+
+        return s;
     }
 
     private int extractYear(JsonNode root) {
