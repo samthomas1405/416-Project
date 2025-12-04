@@ -363,10 +363,28 @@ function useDummyData() {
 
 function PanelContent({ view }) {
   const data = useDummyData();
+  const [compareRDData, setCompareRDData] = React.useState(null);
+
+  React.useEffect(() => {
+    if (view === "compareRD") {
+      axios.get("http://localhost:8080/api/compare/rd")
+        .then(res => {
+          setCompareRDData(res.data);
+        })
+        .catch(e => {
+          console.error("load compare RD data", e);
+          setCompareRDData(null);
+        });
+    }
+  }, [view]);
+
   if (!view) {
     return <Typography variant="body2" color="text.secondary">Select an item from the menu.</Typography>;
   }
-  if (!data) {
+  if (!data && view !== "compareRD") {
+    return <Typography variant="body2" color="text.secondary">Loading…</Typography>;
+  }
+  if (view === "compareRD" && !compareRDData) {
     return <Typography variant="body2" color="text.secondary">Loading…</Typography>;
   }
   switch (view) {
@@ -378,7 +396,7 @@ function PanelContent({ view }) {
       return(
         <>
           <CompareRDBlock
-      data15={data.GUI15_compare_republican_democratic}
+      data15={compareRDData}
       data22={data.GUI22_registration_republican_democratic}
       data23={data.GUI23_early_voting_party_domination}
     />
@@ -757,9 +775,8 @@ function CompareRDTable({ obj, tableProps = {} }) {
   const rows = [
     { metric: "State", rep: rep.state, dem: dem.state },
     { metric: "Felony Voting Rights", rep: rep.felony_rights, dem: dem.felony_rights },
-    { metric: "% Mail Ballots", rep: d3.format(".0%")(rep.pct_mail ?? 0), dem: d3.format(".0%")(dem.pct_mail ?? 0) },
-    { metric: "% Drop Box Ballots", rep: d3.format(".0%")(rep.pct_dropbox ?? 0), dem: d3.format(".0%")(dem.pct_dropbox ?? 0) },
-    { metric: "Turnout %", rep: d3.format(".0%")(rep.turnout_pct ?? 0), dem: d3.format(".0%")(dem.turnout_pct ?? 0) },
+    { metric: "% Mail Ballots", rep: d3.format(".1%")(rep.pct_mail ?? 0), dem: d3.format(".1%")(dem.pct_mail ?? 0) },
+    { metric: "Turnout %", rep: d3.format(".1%")(rep.turnout_pct ?? 0), dem: d3.format(".1%")(dem.turnout_pct ?? 0) },
   ];
 
   return (
@@ -1060,11 +1077,22 @@ function EavsPicker({ value, onChange, stateId }) {
 }
 
 
-function useActiveChoropleth(data, stateId, binsFallback = 7) {
-  const s = data?.GUI07_active_voters_map;
-  const entry = s?.[stateId];
-  const raw = entry?.values || {};
-  const bins = s?.bins ?? binsFallback;
+function useActiveChoropleth(stateId, binsFallback = 7) {
+  const [choroplethData, setChoroplethData] = React.useState(null);
+
+  React.useEffect(() => {
+    axios.get(`http://localhost:8080/api/eavs/active/${stateId}/choropleth`)
+      .then(res => {
+        setChoroplethData(res.data);
+      })
+      .catch(e => {
+        console.error("load active voters choropleth", e);
+        setChoroplethData(null);
+      });
+  }, [stateId]);
+
+  const raw = choroplethData?.values || {};
+  const bins = choroplethData?.bins ?? binsFallback;
 
   const m = React.useMemo(() => {
     const mm = new Map();
@@ -1080,10 +1108,7 @@ function useActiveChoropleth(data, stateId, binsFallback = 7) {
 }
 
 function ActiveVotersBar({ data, stateId, height }) {
-  const src = data?.GUI07_active_voters?.[stateId]
-           ?? data?.GUI07_active_voters?.["25"] ?? null;
-
-  const t = src?.totals ?? { active: 0, inactive: 0, total: 0 };
+  const t = data?.totals ?? { active: 0, inactive: 0, total: 0 };
   const chart = [
     { label: "Active",   value: t.active },
     { label: "Inactive", value: t.inactive },
@@ -1098,10 +1123,7 @@ function ActiveVotersBar({ data, stateId, height }) {
 }
 
 function ActiveVotersTable({ data, stateId }) {
-  const src = data?.GUI07_active_voters?.[stateId]
-           ?? data?.GUI07_active_voters?.["25"] ?? null;
-
-  const rows = (src?.regions ?? []).map((r, i) => ({
+  const rows = (data?.regions ?? []).map((r, i) => ({
     id: r.id ?? i, ...r,
     pctActive: r.total ? r.active / r.total : 0
   }));
@@ -1432,6 +1454,7 @@ function StateView({ stateId, stateName, initialBounds, eavsCategory, onChangeEa
   }, [stateId, registeredMode, onChangeEavs]);
 
   const [provisionals, setProvisionals] = React.useState(null);
+  const [activeVoters, setActiveVoters] = React.useState(null);
 
   React.useEffect(() => {
     axios.get(`http://localhost:8080/api/eavs/provisional/${stateId}/regions`)
@@ -1439,7 +1462,15 @@ function StateView({ stateId, stateName, initialBounds, eavsCategory, onChangeEa
         setProvisionals(res.data)
       })
       .catch(e => console.error("load provisionals", e));
-  }, []);
+  }, [stateId]);
+
+  React.useEffect(() => {
+    axios.get(`http://localhost:8080/api/eavs/active/${stateId}/regions`)
+      .then(res => {
+        setActiveVoters(res.data)
+      })
+      .catch(e => console.error("load active voters", e));
+  }, [stateId]);
 
   // sizes you can tweak
   const LAYOUT = {
@@ -1463,7 +1494,7 @@ function StateView({ stateId, stateName, initialBounds, eavsCategory, onChangeEa
   const { dataMap: e1Map, colors: e1Colors, domain: e1Domain } = apiE1;
 
 
-  const { dataMap: actMap, colors: actColors, domain: actDomain } = useActiveChoropleth(data, stateId);
+  const { dataMap: actMap, colors: actColors, domain: actDomain } = useActiveChoropleth(stateId);
 
   // Registered choropleth (GUI-17) — safe alias
   const useRegChoropleth =
@@ -1538,7 +1569,12 @@ function StateView({ stateId, stateName, initialBounds, eavsCategory, onChangeEa
                 <DetailedCountyLayer
                   stateFips={stateId}
                   source="/us-counties.json"
-                  dataMap={showE1ChoroOnly ? e1Map : undefined}
+                  dataMap={
+                    showE1ChoroOnly ? e1Map :
+                    (activeMode && actMap.size > 0) ? actMap :
+                    (registeredMode && regMap.size > 0) ? regMap :
+                    undefined
+                  }
                   bins={7}
                   onFeatureClick={(feature) => {
                     const geoid = String(feature?.properties?.GEOID);
@@ -1575,7 +1611,7 @@ function StateView({ stateId, stateName, initialBounds, eavsCategory, onChangeEa
               countyGEOID={selectedCounty}
             />
           ) : activeMode ? (
-            <ActiveVotersBar data={data} stateId={stateId} />
+            <ActiveVotersBar data={activeVoters} stateId={stateId} />
           ) : (
             <ProvisionalBar data={provisionals} stateId={stateId} />
           )}
@@ -1594,7 +1630,7 @@ function StateView({ stateId, stateName, initialBounds, eavsCategory, onChangeEa
               </Card>
             )
           ) : activeMode ? (
-            <ActiveVotersTable data={data} stateId={stateId} />
+            <ActiveVotersTable data={activeVoters} stateId={stateId} />
           ) : (
             <ProvisionalTable data={provisionals} stateId={stateId} />
           )}

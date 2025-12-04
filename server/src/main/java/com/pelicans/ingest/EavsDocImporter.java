@@ -175,8 +175,22 @@ public class EavsDocImporter implements CommandLineRunner {
                     skipped++;
                     continue;
                 }
+                
+                // Only process 2024 documents for Massachusetts (stateFips 25)
+                if (year != 2024 || stateFips != 25) {
+                    skipped++;
+                    continue;
+                }
 
-                String fips5Value = fips5 != null ? fips5 : fipscode.substring(0, Math.min(5, fipscode.length()));
+                // For Massachusetts (stateFips 25), use full FIPSCode since it reports at town/city level
+                // For other states, use first 5 digits (county level)
+                String fips5Value;
+                if (stateFips == 25) {
+                    // Use full FIPSCode for MA (remove decimal if present)
+                    fips5Value = fipscode.replace(".0", "").replace(".", "");
+                } else {
+                    fips5Value = fips5 != null ? fips5 : fipscode.substring(0, Math.min(5, fipscode.length()));
+                }
                 String docId = year + "|" + stateFips + "|" + fips5Value;
 
                 EavsDoc eavs = new EavsDoc();
@@ -294,7 +308,7 @@ public class EavsDocImporter implements CommandLineRunner {
                         case 9: registrationAdditions.put(header, parsedValue); break;
                         case 10: registrationChanges.put(header, parsedValue); break;
                         case 11: pollbookDeletions.put(header, parsedValue); break;
-                        case 12: totalVotes.put(header, parsedValue); break;
+                        case 12: totalVotes.put(header, parsedValue); break; // Not used for 2024 (B1* goes to uocavaBallots)
                         case 13: electionDayVotes.put(header, parsedValue); break;
                         case 14: earlyVoting.put(header, parsedValue); break;
                         case 15: absenteeVoting.put(header, parsedValue); break;
@@ -534,30 +548,31 @@ public class EavsDocImporter implements CommandLineRunner {
             else if (upperHeader.startsWith("A10")) return 9; // registrationAdditions
             else if (upperHeader.startsWith("A11")) return 10; // registrationChanges
         } else if (prefix == 'B') {
-            if (upperHeader.startsWith("B1")) return 12; // totalVotes
-            else if (upperHeader.startsWith("B2")) return 13; // electionDayVotes
-            else if (upperHeader.startsWith("B3")) return 14; // earlyVoting
-            else if (upperHeader.startsWith("B4")) return 15; // absenteeVoting
-            else if (upperHeader.startsWith("B5")) return 16; // earlyVotingTotals
-            else if (upperHeader.startsWith("B6")) return 17; // earlyVotingCategories
-            else if (upperHeader.startsWith("B7")) return 18; // earlyVotingInPerson
-            else if (upperHeader.startsWith("B8")) return 19; // earlyVotingByMail
-            else if (upperHeader.startsWith("B9")) return 20; // earlyVotingOther
-            else if (upperHeader.startsWith("B10")) return 21; // earlyVotingUocava
-            else if (upperHeader.startsWith("B11")) return 22; // earlyVotingDomestic
-            else if (upperHeader.startsWith("B12")) return 23; // earlyVotingOtherCategories
-            else if (upperHeader.startsWith("B13")) return 24; // earlyVotingTotals2
-            else if (upperHeader.startsWith("B14") || upperHeader.startsWith("B24")) return 25; // uocavaBallots
-            else if (upperHeader.startsWith("B15")) return 26; // uocavaBallotsCounted
-            else if (upperHeader.startsWith("B16")) return 27; // uocavaBallotsRejected
-            else if (upperHeader.startsWith("B17")) return 28; // uocavaBallotsOther
-            else if (upperHeader.startsWith("B18")) return 29; // uocavaBallotsOtherCategories
+            if (upperHeader.startsWith("B1")) return 25; // uocavaBallots (B1* = UOCAVA registration per 2024 codebook)
+            else if (upperHeader.startsWith("B2")) return 13; // electionDayVotes (B2* = FPCA per 2024 codebook)
+            else if (upperHeader.startsWith("B3")) return 14; // earlyVoting (B3* = Rejected FPCA per 2024 codebook)
+            else if (upperHeader.startsWith("B4")) return 15; // absenteeVoting (B4* = Late FPCA per 2024 codebook)
+            else if (upperHeader.startsWith("B5")) return 16; // earlyVotingTotals (B5* = UOCAVA Transmitted per 2024 codebook)
+            else if (upperHeader.startsWith("B6")) return 17; // earlyVotingCategories (B6* = Post Mail Transmitted per 2024 codebook)
+            else if (upperHeader.startsWith("B7")) return 18; // earlyVotingInPerson (B7* = Email Transmitted per 2024 codebook)
+            else if (upperHeader.startsWith("B8")) return 19; // earlyVotingByMail (B8* = Fax Transmitted per 2024 codebook)
+            else if (upperHeader.startsWith("B9")) return 20; // earlyVotingOther (B9* = Online Transmitted per 2024 codebook)
+            else if (upperHeader.startsWith("B10")) return 21; // earlyVotingUocava (B10* = Other Transmitted per 2024 codebook)
+            else if (upperHeader.startsWith("B11")) return 22; // earlyVotingDomestic (B11* = UOCAVA Returned per 2024 codebook)
+            else if (upperHeader.startsWith("B12")) return 23; // earlyVotingOtherCategories (B12* = Post Mail Returned per 2024 codebook)
+            else if (upperHeader.startsWith("B13")) return 24; // earlyVotingTotals2 (B13* = Email Returned per 2024 codebook)
+            else if (upperHeader.startsWith("B14") || upperHeader.startsWith("B24")) return 25; // uocavaBallots (B14* = Fax Returned, B24* = UOCAVA Rejected per 2024 codebook)
+            else if (upperHeader.startsWith("B15")) return 26; // uocavaBallotsCounted (B15* = Online Returned per 2024 codebook)
+            else if (upperHeader.startsWith("B16")) return 27; // uocavaBallotsRejected (B16* = Other mode Returned per 2024 codebook)
+            else if (upperHeader.startsWith("B17")) return 28; // uocavaBallotsOther (B17* = Total Undeliverable per 2024 codebook)
+            else if (upperHeader.startsWith("B18")) return 29; // uocavaBallotsOtherCategories (B18* = UOCAVA Counted per 2024 codebook)
         } else if (prefix == 'C') {
             if (upperHeader.startsWith("C1")) return 30; // mailBallotsSent
             else if (upperHeader.startsWith("C2")) return 31; // mailBallotApplications
             else if (upperHeader.startsWith("C3")) return 32; // dropBoxReturns
             else if (upperHeader.startsWith("C4")) return 33; // mailBallotsReturned
             else if (upperHeader.startsWith("C5")) return 34; // mailBallotsCounted
+            else if (upperHeader.startsWith("C6")) return 32; // dropBoxReturns (C6a is total drop box votes for 2024)
             else if (upperHeader.startsWith("C9")) return 35; // mailBallotsRejected
         } else if (prefix == 'E') {
             if (upperHeader.startsWith("E1")) return 36; // provisionalBallotsCast
