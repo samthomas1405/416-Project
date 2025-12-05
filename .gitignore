@@ -26,6 +26,7 @@ yarn-error.log*
 
 # large data directories
 /data/
+!/data/preprocess/
 /data_clean/
 /data_clean_extracted/
 /data_clean.zip
